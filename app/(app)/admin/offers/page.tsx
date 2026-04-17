@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Plus, ChevronRight } from "lucide-react";
-import { MOCK_OFFERS } from "@/lib/mock/offers";
+import { Plus, ChevronRight, Package } from "lucide-react";
+import { listAllOffersAdmin } from "@/lib/queries/offers";
 import {
   LANGUAGE_LABELS,
   NICHE_LABELS,
@@ -10,7 +10,9 @@ import {
 import { OfferPill } from "@/components/offers/offer-pill";
 import { formatDateShort, formatNumber } from "@/lib/utils";
 
-export default function AdminOffersPage() {
+export default async function AdminOffersPage() {
+  const offers = await listAllOffersAdmin();
+
   return (
     <div className="relative z-10 px-4 md:px-8 py-6 md:py-8 flex flex-col gap-6 max-w-[1680px] mx-auto">
       <header className="flex items-center justify-between">
@@ -22,7 +24,7 @@ export default function AdminOffersPage() {
             Ofertas
           </h1>
           <p className="text-[13px] text-text-2 mt-1">
-            {MOCK_OFFERS.length} ofertas cadastradas
+            {offers.length} {offers.length === 1 ? "oferta cadastrada" : "ofertas cadastradas"}
           </p>
         </div>
         <Link
@@ -41,90 +43,104 @@ export default function AdminOffersPage() {
         </Link>
       </header>
 
-      <div className="glass rounded-[var(--r-lg)] overflow-x-auto">
-        <table className="w-full min-w-[900px]">
-          <thead>
-            <tr className="text-[11px] font-semibold text-text-3 uppercase tracking-[0.14em] text-left">
-              <th className="px-5 py-3 font-semibold">Oferta</th>
-              <th className="px-5 py-3 font-semibold">Nicho</th>
-              <th className="px-5 py-3 font-semibold">Estrutura</th>
-              <th className="px-5 py-3 font-semibold">Idioma</th>
-              <th className="px-5 py-3 font-semibold">Status</th>
-              <th className="px-5 py-3 font-semibold text-right">Anúncios</th>
-              <th className="px-5 py-3 font-semibold">Lançada</th>
-              <th className="w-10" />
-            </tr>
-          </thead>
-          <tbody>
-            {MOCK_OFFERS.map((offer) => {
-              const lang = LANGUAGE_LABELS[offer.language];
-              const statusVariant =
-                offer.status === "active"
-                  ? "success"
-                  : offer.status === "paused"
-                  ? "error"
-                  : "default";
-              return (
-                <tr
-                  key={offer.id}
-                  className="
-                    border-t border-[var(--border-hairline)]
-                    text-[13px]
-                    hover:bg-[var(--bg-elevated)]
-                    transition-colors duration-150
-                  "
-                >
-                  <td className="px-5 py-3">
-                    <Link
-                      href={`/app/${offer.slug}`}
-                      className="font-medium text-text hover:underline"
-                    >
-                      {offer.title}
-                    </Link>
-                  </td>
-                  <td className="px-5 py-3 text-text-2">
-                    {NICHE_LABELS[offer.niche]}
-                  </td>
-                  <td className="px-5 py-3 text-text-2">
-                    {STRUCTURE_LABELS[offer.structure]}
-                  </td>
-                  <td className="px-5 py-3 text-text-2">
-                    {lang.flag} {offer.language}
-                  </td>
-                  <td className="px-5 py-3">
-                    <OfferPill
-                      size="sm"
-                      variant={statusVariant}
-                      dot={offer.status === "active"}
-                    >
-                      {STATUS_LABELS[offer.status]}
-                    </OfferPill>
-                  </td>
-                  <td className="px-5 py-3 text-right mono font-medium">
-                    {formatNumber(offer.ad_count)}
-                  </td>
-                  <td className="px-5 py-3 text-text-3">
-                    {formatDateShort(offer.launched_at)}
-                  </td>
-                  <td className="px-5 py-3">
-                    <Link
-                      href={`/app/${offer.slug}`}
-                      className="
-                        grid place-items-center w-7 h-7 rounded-full
-                        text-text-3 hover:text-text hover:bg-[var(--bg-glass)]
-                        transition-colors
-                      "
-                      aria-label="Abrir oferta"
-                    >
-                      <ChevronRight size={14} strokeWidth={1.8} />
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {offers.length === 0 ? (
+        <div className="glass rounded-[var(--r-lg)] p-12 flex flex-col items-center gap-3">
+          <Package size={32} strokeWidth={1.2} className="text-text-3" />
+          <div className="text-center">
+            <p className="text-[15px] font-medium text-text mb-1">
+              Nenhuma oferta cadastrada ainda
+            </p>
+            <p className="text-[13px] text-text-2">
+              Clica em Nova oferta pra adicionar a primeira.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="glass rounded-[var(--r-lg)] overflow-x-auto">
+          <table className="w-full min-w-[900px]">
+            <thead>
+              <tr className="text-[11px] font-semibold text-text-3 uppercase tracking-[0.14em] text-left">
+                <th className="px-5 py-3 font-semibold">Oferta</th>
+                <th className="px-5 py-3 font-semibold">Nicho</th>
+                <th className="px-5 py-3 font-semibold">Estrutura</th>
+                <th className="px-5 py-3 font-semibold">Idioma</th>
+                <th className="px-5 py-3 font-semibold">Status</th>
+                <th className="px-5 py-3 font-semibold text-right">Anúncios</th>
+                <th className="px-5 py-3 font-semibold">Lançada</th>
+                <th className="w-10" />
+              </tr>
+            </thead>
+            <tbody>
+              {offers.map((offer) => {
+                const lang = LANGUAGE_LABELS[offer.language];
+                const statusVariant =
+                  offer.status === "active"
+                    ? "success"
+                    : offer.status === "paused"
+                    ? "error"
+                    : "default";
+                return (
+                  <tr
+                    key={offer.id}
+                    className="
+                      border-t border-[var(--border-hairline)]
+                      text-[13px]
+                      hover:bg-[var(--bg-elevated)]
+                      transition-colors duration-150
+                    "
+                  >
+                    <td className="px-5 py-3">
+                      <Link
+                        href={`/app/${offer.slug}`}
+                        className="font-medium text-text hover:underline"
+                      >
+                        {offer.title}
+                      </Link>
+                    </td>
+                    <td className="px-5 py-3 text-text-2">
+                      {NICHE_LABELS[offer.niche]}
+                    </td>
+                    <td className="px-5 py-3 text-text-2">
+                      {STRUCTURE_LABELS[offer.structure]}
+                    </td>
+                    <td className="px-5 py-3 text-text-2">
+                      {lang.flag} {offer.language}
+                    </td>
+                    <td className="px-5 py-3">
+                      <OfferPill
+                        size="sm"
+                        variant={statusVariant}
+                        dot={offer.status === "active"}
+                      >
+                        {STATUS_LABELS[offer.status]}
+                      </OfferPill>
+                    </td>
+                    <td className="px-5 py-3 text-right mono font-medium">
+                      {formatNumber(offer.ad_count)}
+                    </td>
+                    <td className="px-5 py-3 text-text-3">
+                      {offer.launched_at ? formatDateShort(offer.launched_at) : "—"}
+                    </td>
+                    <td className="px-5 py-3">
+                      <Link
+                        href={`/app/${offer.slug}`}
+                        className="
+                          grid place-items-center w-7 h-7 rounded-full
+                          text-text-3 hover:text-text hover:bg-[var(--bg-glass)]
+                          transition-colors
+                        "
+                        aria-label="Abrir oferta"
+                      >
+                        <ChevronRight size={14} strokeWidth={1.8} />
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

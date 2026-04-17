@@ -58,7 +58,7 @@ export function OfferCard({ offer }: OfferCardProps) {
               }}
               className="hover:text-text transition-colors duration-150"
               aria-label="Transcrição disponível"
-              title={`Transcrição · ${offer.transcript_duration ? Math.round(offer.transcript_duration / 60) + "min" : ""}`}
+              title={`Transcrição · ${offer.vsl_duration_seconds ? Math.round(offer.vsl_duration_seconds / 60) + "min" : ""}`}
             >
               <FileText size={15} strokeWidth={1.5} />
             </button>
@@ -113,7 +113,7 @@ export function OfferCard({ offer }: OfferCardProps) {
       {/* Meta row: date + status pill */}
       <div className="flex items-center justify-between mb-2.5">
         <span className="text-[11px] text-text-3">
-          {formatDateShort(offer.launched_at)}
+          {offer.launched_at ? formatDateShort(offer.launched_at) : ""}
         </span>
         <OfferPill variant={statusVariant} size="sm" dot={offer.status === "active"}>
           {STATUS_LABELS[offer.status]}

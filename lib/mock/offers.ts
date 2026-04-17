@@ -19,7 +19,7 @@ export const MOCK_OFFERS: Offer[] = [
     thumb_gradient: 1,
     transcript_preview:
       "Olha, se você tá aqui assistindo esse vídeo, é porque você tá procurando uma forma de sair do zero e começar a ganhar dinheiro online sem precisar aparecer. E eu vou te mostrar exatamente como, nos próximos 7 minutos, você vai entender o método que já fez mais de 3 mil pessoas faturarem suas primeiras vendas...",
-    transcript_duration: 1850,
+    vsl_duration_seconds: 1850,
     flags: ["escalando"],
   },
   {
@@ -36,7 +36,7 @@ export const MOCK_OFFERS: Offer[] = [
     thumb_gradient: 2,
     transcript_preview:
       "O que eu vou te revelar aqui é um sistema que descobri depois de quebrar 3 negócios e perder mais de 200 mil reais. E que hoje faz mais de 100 mil por mês no automático...",
-    transcript_duration: 2220,
+    vsl_duration_seconds: 2220,
   },
   {
     id: "offer-03",
@@ -52,7 +52,7 @@ export const MOCK_OFFERS: Offer[] = [
     thumb_gradient: 3,
     transcript_preview:
       "Nos próximos minutos eu vou te mostrar como você pode ganhar em dólar, mesmo sem saber falar inglês, mesmo sem nunca ter investido antes, e mesmo sem ter uma grande quantia pra começar...",
-    transcript_duration: 1620,
+    vsl_duration_seconds: 1620,
     flags: ["escalando"],
   },
   {
@@ -69,7 +69,7 @@ export const MOCK_OFFERS: Offer[] = [
     thumb_gradient: 4,
     transcript_preview:
       "Se você quer ganhar dinheiro no TikTok mas tem vergonha de aparecer, esse vídeo é pra você. Eu descobri um método que permite criar conta, postar e monetizar sem nunca mostrar o rosto...",
-    transcript_duration: 1340,
+    vsl_duration_seconds: 1340,
   },
   {
     id: "offer-05",
@@ -85,7 +85,7 @@ export const MOCK_OFFERS: Offer[] = [
     thumb_gradient: 5,
     transcript_preview:
       "O mercado de produtos virais cresceu 340% no último ano. E os caras que estão ganhando de verdade não são os influencers famosos. São pessoas comuns como você e eu que descobriram esse padrão...",
-    transcript_duration: 2040,
+    vsl_duration_seconds: 2040,
   },
   {
     id: "offer-06",
@@ -101,7 +101,7 @@ export const MOCK_OFFERS: Offer[] = [
     thumb_gradient: 6,
     transcript_preview:
       "Todo mundo fala de high ticket mas a verdade é que low ticket é que escala. Você vende 1000 unidades de 27 reais em uma semana, muito mais fácil do que vender 10 de 2700...",
-    transcript_duration: 1780,
+    vsl_duration_seconds: 1780,
     flags: ["escalando"],
   },
   {
@@ -131,7 +131,7 @@ export const MOCK_OFFERS: Offer[] = [
     thumb_gradient: 8,
     transcript_preview:
       "Eu criei uma agência de IA do zero em 30 dias usando exatamente esse método que vou te ensinar. E o melhor: não precisa saber programar. Só precisa saber usar ChatGPT...",
-    transcript_duration: 1560,
+    vsl_duration_seconds: 1560,
   },
   {
     id: "offer-09",
@@ -186,7 +186,7 @@ export const MOCK_OFFERS: Offer[] = [
     thumb_gradient: 12,
     transcript_preview:
       "The creator economy is shifting. AI tools are letting one person do what used to take a whole team. In this video, I'll show you exactly how I built a 6-figure creator business using only ChatGPT and Midjourney...",
-    transcript_duration: 2100,
+    vsl_duration_seconds: 2100,
     flags: ["escalando"],
   },
   {

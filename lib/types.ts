@@ -34,15 +34,33 @@ export type Offer = {
   traffic_source: TrafficSource;
   status: OfferStatus;
   ad_count: number;
-  launched_at: string; // ISO date
-  vsl_url?: string;
-  ai_summary?: string;
-  flags?: string[];
+  launched_at: string | null; // ISO date
   thumb_gradient: number; // 1-20, referência ao gradient CSS
-  transcript_preview?: string; // primeiros 400 chars do transcrito
-  transcript_duration?: number; // segundos
+
+  // VSL (null se ainda não foi upado)
+  vsl_storage_path?: string | null;
+  vsl_thumbnail_path?: string | null;
+  vsl_duration_seconds?: number | null;
+  vsl_size_bytes?: number | null;
+  vsl_uploaded_at?: string | null;
+
+  // Transcript (Whisper)
+  transcript_preview?: string | null;
+  transcript_text?: string | null;
+
+  // AI
+  ai_summary?: string | null;
+
+  flags?: string[];
+  created_by?: string | null;
   created_at?: string;
   updated_at?: string;
+};
+
+// Backwards-compat alias pra componentes que usavam transcript_duration
+export type OfferWithDuration = Offer & {
+  /** @deprecated usar vsl_duration_seconds */
+  transcript_duration?: number | null;
 };
 
 export type Page = {

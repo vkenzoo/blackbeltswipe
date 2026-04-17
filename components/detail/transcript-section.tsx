@@ -44,8 +44,8 @@ export function TranscriptSection({ offer }: { offer: Offer }) {
             Transcrição
           </div>
           <h2 className="display text-[22px] font-semibold tracking-[-0.03em]">
-            {offer.transcript_duration &&
-              `${formatDuration(offer.transcript_duration)} · `}
+            {offer.vsl_duration_seconds &&
+              `${formatDuration(offer.vsl_duration_seconds)} · `}
             texto completo
           </h2>
         </div>
@@ -69,8 +69,8 @@ export function TranscriptSection({ offer }: { offer: Offer }) {
         {paragraphs.map((p, i) => (
           <div key={i} className="group flex gap-3 items-start">
             <span className="mono text-[11px] text-text-4 tabular-nums shrink-0 w-10 pt-1">
-              {String(Math.floor((offer.transcript_duration ?? 0) * (i / paragraphs.length) / 60)).padStart(2, "0")}
-              :{String(Math.floor((offer.transcript_duration ?? 0) * (i / paragraphs.length) % 60)).padStart(2, "0")}
+              {String(Math.floor((offer.vsl_duration_seconds ?? 0) * (i / paragraphs.length) / 60)).padStart(2, "0")}
+              :{String(Math.floor((offer.vsl_duration_seconds ?? 0) * (i / paragraphs.length) % 60)).padStart(2, "0")}
             </span>
             <p className="text-[14px] leading-relaxed text-text-2 flex-1">{p}</p>
             <button

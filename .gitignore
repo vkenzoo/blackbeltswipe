@@ -1,0 +1,78 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+# testing
+/coverage
+# next.js
+/.next/
+/out/
+# production
+/build
+# misc
+.DS_Store
+*.pem
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+# env files (can opt-in for committing if needed)
+.env*
+# vercel
+.vercel
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+.yarn/
+# Next.js
+.next/
+out/
+build/
+dist/
+# Env
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Debug
+# OS
+Thumbs.db
+*.swp
+*.swo
+# Editor
+.vscode/
+.idea/
+*.sublime-*
+# Turbo / bun
+.turbo/
+# Typescript
+# Vercel
+# ─────────────────────────────────────────────
+# BBS-specific — NEVER commit these
+# VSL Drive export zips (8.3GB) — keep local only
+docs/references/*.zip
+docs/references/extracted/
+docs/references/*.mp4
+docs/references/*.mov
+# Supabase local
+supabase/.temp/
+supabase/.branches/
+# Worker storage
+apps/worker/storage/
+*.playwright-state.json
+# Logs
+logs/
+*.log

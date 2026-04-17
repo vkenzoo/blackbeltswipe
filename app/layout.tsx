@@ -1,0 +1,33 @@
+import type { Metadata } from "next";
+import { Inter, Inter_Tight } from "next/font/google";
+import "./globals.css";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const interTight = Inter_Tight({
+  variable: "--font-inter-tight",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  display: "swap",
+});
+
+export const metadata: Metadata = {
+  title: "Black Belt Swipe",
+  description: "Biblioteca curada de ofertas escaladas de Facebook Ads",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="pt-BR" className={`${inter.variable} ${interTight.variable}`}>
+      <body className="min-h-screen">{children}</body>
+    </html>
+  );
+}

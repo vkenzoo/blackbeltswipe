@@ -7,14 +7,6 @@ import {
   Package,
   Image as ImageIcon,
   FileText,
-  Share2,
-  Zap,
-  BarChart3,
-  MessagesSquare,
-  Sparkles,
-  Heart,
-  GraduationCap,
-  Power,
   Globe,
 } from "lucide-react";
 import { Logo } from "./logo";
@@ -32,17 +24,6 @@ const NAV_GERAL: NavItem[] = [
   { label: "Ofertas", href: "/app/ofertas", icon: Package },
   { label: "Criativos", href: "/app/criativos", icon: ImageIcon },
   { label: "Páginas", href: "/app/paginas", icon: FileText },
-  { label: "Hub de afiliação", href: "/app/hub", icon: Share2 },
-  { label: "On Demand", href: "/app/ondemand", icon: Zap },
-  { label: "Relatórios", href: "/app/relatorios", icon: BarChart3 },
-  { label: "Discord", href: "/app/discord", icon: MessagesSquare },
-];
-
-const NAV_PRA_VOCE: NavItem[] = [
-  { label: "Recomendados", href: "/app/recomendados", icon: Sparkles },
-  { label: "Favoritos", href: "/app/favoritos", icon: Heart },
-  { label: "Academy", href: "/app/academy", icon: GraduationCap },
-  { label: "Ads Power", href: "/app/ads-power", icon: Power },
 ];
 
 function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
@@ -98,7 +79,6 @@ export function Sidebar() {
       {/* Nav sections */}
       <nav className="flex-1 overflow-y-auto flex flex-col gap-5 -mx-1 px-1">
         <NavGroup label="Geral" items={NAV_GERAL} />
-        <NavGroup label="Pra você" items={NAV_PRA_VOCE} />
       </nav>
 
       {/* Suporte / idioma */}

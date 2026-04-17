@@ -76,3 +76,4 @@ apps/worker/storage/
 # Logs
 logs/
 *.log
+.claude/

@@ -1,12 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { ChevronUp } from "lucide-react";
 import type { MetricWindow, Offer } from "@/lib/types";
 import { getOfferMetrics } from "@/lib/mock/metrics";
 import { formatNumber } from "@/lib/utils";
-import { MetricsChart } from "./metrics-chart";
 import { cn } from "@/lib/utils";
+
+// Recharts precisa de medidas reais do DOM. Desabilita SSR pra evitar
+// warnings de "width(-1) and height(-1)" e hydration mismatch.
+const MetricsChart = dynamic(
+  () => import("./metrics-chart").then((m) => m.MetricsChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[140px] skeleton mx-2 rounded-[var(--r-md)]" />
+    ),
+  }
+);
 
 const WINDOWS: { key: MetricWindow; label: string }[] = [
   { key: "6m", label: "6 meses" },

@@ -26,7 +26,7 @@ export default async function OfferDetailPage({
   const pages = getOfferPages(offer.id, offer.slug);
 
   return (
-    <div className="relative z-10 px-8 py-8 flex flex-col gap-10 max-w-[1680px] mx-auto">
+    <div className="relative z-10 px-4 md:px-8 py-6 md:py-8 flex flex-col gap-8 md:gap-10 max-w-[1680px] mx-auto">
       {/* Back link */}
       <Link
         href="/app"
@@ -39,7 +39,7 @@ export default async function OfferDetailPage({
       <OfferHeader offer={offer} />
 
       {/* Main two-column layout */}
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid gap-6 grid-cols-1 min-[1100px]:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-6">
           <VslPlayer thumbGradientNumber={offer.thumb_gradient} />
         </div>

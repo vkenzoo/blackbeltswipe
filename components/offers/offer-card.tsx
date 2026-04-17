@@ -25,28 +25,20 @@ export function OfferCard({ offer }: OfferCardProps) {
   const lang = LANGUAGE_LABELS[offer.language];
   const statusVariant =
     offer.status === "active" ? "success" : offer.status === "paused" ? "error" : "default";
+  const isHot = offer.flags?.includes("escalando");
 
   return (
     <Link
       href={`/app/${offer.slug}`}
-      className="
+      className={`
         group
         relative block
         glass
         rounded-[var(--r-lg)]
         p-4
-        transition-[transform,border-color,background,box-shadow]
-        duration-[280ms] ease-[var(--ease-spring)]
-        hover:-translate-y-[3px] hover:scale-[1.015]
-        hover:bg-[var(--bg-glass-hover)]
-        hover:border-[var(--border-strong)]
-        focus:outline-none
-      "
-      style={
-        {
-          // hover shadow via style (can't do multi-shadow in hover easily in Tailwind 4 defaults)
-        }
-      }
+        offer-card-hover
+        ${isHot ? "offer-card-hot" : ""}
+      `}
     >
       {/* Top row: ad count + icons */}
       <div className="flex items-center justify-between mb-3">

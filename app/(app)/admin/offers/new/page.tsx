@@ -48,7 +48,7 @@ export default function NewOfferPage() {
   }
 
   return (
-    <div className="relative z-10 px-8 py-8 flex flex-col gap-8 max-w-[720px] mx-auto">
+    <div className="relative z-10 px-4 md:px-8 py-6 md:py-8 flex flex-col gap-8 max-w-[720px] mx-auto">
       <Link
         href="/admin/offers"
         className="inline-flex items-center gap-1.5 text-[13px] text-text-2 hover:text-text transition-colors w-fit"

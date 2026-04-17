@@ -10,11 +10,7 @@ export function OfferFilters() {
         Filtros
       </OfferPill>
 
-      <OfferPill
-        dot
-        className="text-accent"
-        icon={null}
-      >
+      <OfferPill dot variant="live">
         Escalando agora
       </OfferPill>
 

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 type OfferPillProps = {
   children: React.ReactNode;
-  variant?: "default" | "success" | "warning" | "error" | "niche" | "ghost";
+  variant?: "default" | "success" | "warning" | "error" | "niche" | "ghost" | "live";
   size?: "sm" | "md";
   icon?: React.ReactNode;
   dot?: boolean;
@@ -20,6 +20,9 @@ const VARIANTS = {
     "bg-[color-mix(in_srgb,var(--error)_10%,transparent)] border-[color-mix(in_srgb,var(--error)_20%,transparent)] text-[var(--error)]",
   niche: "bg-transparent border-[var(--border-default)] text-text-2",
   ghost: "bg-transparent border-transparent text-text-3",
+  // "escalando agora" — fundo glass com dot verde pulsante, texto branco
+  live:
+    "bg-[var(--bg-glass)] border-[var(--border-default)] text-text hover:bg-[var(--bg-glass-hover)] hover:border-[var(--border-strong)] pill-live",
 };
 
 const SIZES = {
@@ -48,8 +51,11 @@ export function OfferPill({
         <span
           className="pulse-dot w-1.5 h-1.5 rounded-full shrink-0"
           style={{
-            backgroundColor: "currentColor",
-            boxShadow: "0 0 8px currentColor",
+            backgroundColor: variant === "live" ? "var(--success)" : "currentColor",
+            boxShadow:
+              variant === "live"
+                ? "0 0 8px var(--success)"
+                : "0 0 8px currentColor",
           }}
           aria-hidden="true"
         />

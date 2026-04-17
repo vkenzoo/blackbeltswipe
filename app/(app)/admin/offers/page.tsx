@@ -12,7 +12,7 @@ import { formatDateShort, formatNumber } from "@/lib/utils";
 
 export default function AdminOffersPage() {
   return (
-    <div className="relative z-10 px-8 py-8 flex flex-col gap-6 max-w-[1680px] mx-auto">
+    <div className="relative z-10 px-4 md:px-8 py-6 md:py-8 flex flex-col gap-6 max-w-[1680px] mx-auto">
       <header className="flex items-center justify-between">
         <div>
           <div className="text-[11px] font-semibold text-text-3 uppercase tracking-[0.14em] mb-1">
@@ -41,8 +41,8 @@ export default function AdminOffersPage() {
         </Link>
       </header>
 
-      <div className="glass rounded-[var(--r-lg)] overflow-hidden">
-        <table className="w-full">
+      <div className="glass rounded-[var(--r-lg)] overflow-x-auto">
+        <table className="w-full min-w-[900px]">
           <thead>
             <tr className="text-[11px] font-semibold text-text-3 uppercase tracking-[0.14em] text-left">
               <th className="px-5 py-3 font-semibold">Oferta</th>

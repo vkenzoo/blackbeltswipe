@@ -1,0 +1,19 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bbs-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F5F5F7"/>
+      <stop offset="100%" stop-color="#868686"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="#000"/>
+  <rect x="2" y="2" width="28" height="28" rx="6" fill="url(#bbs-grad)"/>
+  <text
+    x="16"
+    y="22"
+    text-anchor="middle"
+    font-family="'Inter Tight', -apple-system, system-ui, sans-serif"
+    font-weight="700"
+    font-size="18"
+    fill="#000"
+  >B</text>
+</svg>

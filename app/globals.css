@@ -247,3 +247,37 @@ body::after {
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: var(--r-md);
 }
+
+/* ─────────────────────────────────────────────
+   OfferCard hover — multi-layer glow/shadow
+   ───────────────────────────────────────────── */
+
+.offer-card-hover {
+  transition:
+    transform 280ms var(--ease-spring),
+    border-color 240ms var(--ease-standard),
+    background 240ms var(--ease-standard),
+    box-shadow 240ms var(--ease-standard);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 32px rgba(0, 0, 0, 0.4);
+}
+.offer-card-hover:hover {
+  transform: translateY(-3px) scale(1.015);
+  border-color: var(--border-strong);
+  background: var(--bg-glass-hover);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px var(--accent-soft),
+    0 0 60px -20px var(--accent-glow);
+}
+
+/* Ofertas com flag "escalando" — glow sutil permanente */
+.offer-card-hot {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 50px -25px rgba(255, 255, 255, 0.12);
+}

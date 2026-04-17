@@ -6,7 +6,19 @@ import { Menu, X } from "lucide-react";
 import { Sidebar } from "./sidebar";
 import { Logo } from "./logo";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+type User = {
+  email: string;
+  name: string | null;
+  role: "admin" | "member" | "affiliate";
+};
+
+export function AppShell({
+  children,
+  user,
+}: {
+  children: React.ReactNode;
+  user: User;
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -64,7 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Desktop sidebar — fixed at lg+ */}
       <div className="hidden lg:block">
-        <Sidebar />
+        <Sidebar user={user} />
       </div>
 
       {/* Mobile drawer */}
@@ -91,7 +103,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ${open ? "translate-x-0" : "-translate-x-full"}
           `}
         >
-          <Sidebar />
+          <Sidebar user={user} />
           <button
             type="button"
             onClick={() => setOpen(false)}

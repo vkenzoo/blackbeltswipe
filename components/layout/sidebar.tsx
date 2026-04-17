@@ -7,11 +7,18 @@ import {
   Package,
   Image as ImageIcon,
   FileText,
-  Globe,
+  Settings,
 } from "lucide-react";
 import { Logo } from "./logo";
 import { WorkspaceSwitcher } from "./workspace-switcher";
+import { UserMenu } from "./user-menu";
 import { cn } from "@/lib/utils";
+
+type User = {
+  email: string;
+  name: string | null;
+  role: "admin" | "member" | "affiliate";
+};
 
 type NavItem = {
   label: string;
@@ -26,6 +33,10 @@ const NAV_GERAL: NavItem[] = [
   { label: "Páginas", href: "/app/paginas", icon: FileText },
 ];
 
+const NAV_ADMIN: NavItem[] = [
+  { label: "Ofertas", href: "/admin/offers", icon: Settings },
+];
+
 function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
   const pathname = usePathname();
 
@@ -35,7 +46,8 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
         {label}
       </div>
       {items.map((item) => {
-        const active = pathname === item.href;
+        const active =
+          pathname === item.href || pathname.startsWith(`${item.href}/`);
         const Icon = item.icon;
         return (
           <Link
@@ -59,7 +71,7 @@ function NavGroup({ label, items }: { label: string; items: NavItem[] }) {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ user }: { user: User }) {
   return (
     <aside
       className="fixed left-0 top-0 bottom-0 w-[260px] z-30
@@ -79,24 +91,13 @@ export function Sidebar() {
       {/* Nav sections */}
       <nav className="flex-1 overflow-y-auto flex flex-col gap-5 -mx-1 px-1">
         <NavGroup label="Geral" items={NAV_GERAL} />
+        {user.role === "admin" && (
+          <NavGroup label="Admin" items={NAV_ADMIN} />
+        )}
       </nav>
 
-      {/* Suporte / idioma */}
-      <div className="pt-3 border-t border-[var(--border-hairline)]">
-        <div className="px-3 mb-1 text-[10px] font-semibold text-text-3 uppercase tracking-[0.14em]">
-          Suporte
-        </div>
-        <button
-          type="button"
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-[var(--r-md)]
-                     text-[13px] font-medium text-text-2 hover:text-text
-                     hover:bg-[var(--bg-glass)]
-                     transition-[background,color] duration-200 ease-[var(--ease-standard)]"
-        >
-          <Globe size={15} strokeWidth={1.5} />
-          <span>🇧🇷 Português</span>
-        </button>
-      </div>
+      {/* User menu */}
+      <UserMenu email={user.email} name={user.name} role={user.role} />
     </aside>
   );
 }

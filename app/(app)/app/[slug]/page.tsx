@@ -36,7 +36,12 @@ export default async function OfferDetailPage({
 
       <div className="grid gap-6 grid-cols-1 min-[1100px]:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-6">
-          <VslPlayer thumbGradientNumber={offer.thumb_gradient} />
+          <VslPlayer
+            slug={offer.slug}
+            hasVsl={!!offer.vsl_storage_path}
+            thumbnailPath={offer.vsl_thumbnail_path}
+            thumbGradientNumber={offer.thumb_gradient}
+          />
         </div>
         <div className="flex flex-col gap-6">
           <MetricsPanel offer={offer} />

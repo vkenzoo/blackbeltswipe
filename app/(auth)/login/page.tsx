@@ -1,8 +1,8 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Loader2, Mail, CheckCircle2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2, Mail, Lock } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { createClient } from "@/lib/supabase/client";
 
@@ -49,131 +49,165 @@ function LoginCardSkeleton() {
 }
 
 function LoginCard() {
+  const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") ?? "/app";
+
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string>("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setStatus("sending");
+    setStatus("submitting");
     setErrorMsg("");
 
     const supabase = createClient();
-    const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo },
-    });
+    // 1. Tenta sign in
+    const signIn = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) {
-      setStatus("error");
-      setErrorMsg(error.message);
-    } else {
-      setStatus("sent");
+    if (!signIn.error) {
+      router.push(next);
+      router.refresh();
+      return;
     }
+
+    // 2. Se user não existe, cria (signup)
+    const isMissingUser =
+      signIn.error.message.toLowerCase().includes("invalid login credentials") ||
+      signIn.error.status === 400;
+
+    if (isMissingUser) {
+      const signUp = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (signUp.error) {
+        setStatus("error");
+        setErrorMsg(signUp.error.message);
+        return;
+      }
+
+      // se session foi criada (confirm email off): já logou
+      if (signUp.data.session) {
+        router.push(next);
+        router.refresh();
+        return;
+      }
+
+      setStatus("error");
+      setErrorMsg("Conta criada mas sessão não gerada. Ativa 'Disable email confirmations' no Supabase.");
+      return;
+    }
+
+    // outro erro
+    setStatus("error");
+    setErrorMsg(signIn.error.message);
   }
 
   return (
     <div className="glass-strong rounded-[var(--r-xl)] p-10 w-full max-w-[420px] relative z-10 flex flex-col gap-6">
       <Logo size="md" />
 
-      {status === "sent" ? (
-        <div className="flex flex-col gap-4 py-4">
-          <div className="w-12 h-12 rounded-full grid place-items-center bg-[color-mix(in_srgb,var(--success)_15%,transparent)] border border-[color-mix(in_srgb,var(--success)_30%,transparent)]">
-            <CheckCircle2 size={24} strokeWidth={1.8} className="text-[var(--success)]" />
-          </div>
-          <div>
-            <h1 className="display text-[22px] font-semibold tracking-[-0.03em] mb-1.5">
-              Email enviado.
-            </h1>
-            <p className="text-[13px] text-text-2 leading-relaxed">
-              Te mandamos um link mágico pra{" "}
-              <span className="mono text-text">{email}</span>. Clica nele pra entrar — a janela pode ser fechada.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setStatus("idle")}
-            className="text-[12px] text-text-3 hover:text-text transition-colors self-start mt-2"
-          >
-            ← Usar outro email
-          </button>
+      <div>
+        <h1 className="display text-[28px] font-semibold tracking-[-0.03em] mb-1.5">
+          Bem-vindo.
+        </h1>
+        <p className="text-[13px] text-text-2">
+          Entra com seu email e senha. Se for novo por aqui, a conta é criada automaticamente.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <div className="relative">
+          <Mail
+            size={15}
+            strokeWidth={1.8}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-text-3 pointer-events-none"
+          />
+          <input
+            type="email"
+            name="email"
+            required
+            autoFocus
+            autoComplete="email"
+            placeholder="seu@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={status === "submitting"}
+            className="
+              w-full pl-11 pr-4 py-3.5 rounded-[var(--r-md)]
+              bg-black/30 border border-[var(--border-default)]
+              text-[14px] text-text placeholder:text-text-3
+              transition-[border-color,background,box-shadow] duration-200
+              focus:outline-none focus:border-[var(--accent)]
+              focus:bg-black/50 focus:shadow-[0_0_0_4px_var(--accent-soft)]
+              disabled:opacity-60
+            "
+          />
         </div>
-      ) : (
-        <>
-          <div>
-            <h1 className="display text-[28px] font-semibold tracking-[-0.03em] mb-1.5">
-              Bem-vindo.
-            </h1>
-            <p className="text-[13px] text-text-2">
-              Entra pelo magic link no seu email.
-            </p>
+
+        <div className="relative">
+          <Lock
+            size={15}
+            strokeWidth={1.8}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-text-3 pointer-events-none"
+          />
+          <input
+            type="password"
+            name="password"
+            required
+            minLength={6}
+            autoComplete="current-password"
+            placeholder="senha (mín 6)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={status === "submitting"}
+            className="
+              w-full pl-11 pr-4 py-3.5 rounded-[var(--r-md)]
+              bg-black/30 border border-[var(--border-default)]
+              text-[14px] text-text placeholder:text-text-3
+              transition-[border-color,background,box-shadow] duration-200
+              focus:outline-none focus:border-[var(--accent)]
+              focus:bg-black/50 focus:shadow-[0_0_0_4px_var(--accent-soft)]
+              disabled:opacity-60
+            "
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={status === "submitting" || !email || !password}
+          className="
+            w-full py-3.5 mt-1 rounded-[var(--r-md)]
+            bg-[var(--accent)] text-black font-semibold text-[14px]
+            transition-[transform,background,opacity] duration-200 ease-[var(--ease-spring)]
+            hover:scale-[1.01] hover:bg-white
+            active:scale-[0.98]
+            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+            tracking-[-0.01em]
+            inline-flex items-center justify-center gap-2
+          "
+        >
+          {status === "submitting" && (
+            <Loader2 size={15} strokeWidth={2} className="animate-spin" />
+          )}
+          {status === "submitting" ? "Entrando..." : "Entrar"}
+        </button>
+
+        {status === "error" && (
+          <div className="text-[12px] text-[var(--error)] mt-1">
+            {errorMsg || "Erro ao entrar. Tenta de novo."}
           </div>
+        )}
+      </form>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <div className="relative">
-              <Mail
-                size={15}
-                strokeWidth={1.8}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-text-3 pointer-events-none"
-              />
-              <input
-                type="email"
-                name="email"
-                required
-                autoFocus
-                autoComplete="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={status === "sending"}
-                className="
-                  w-full pl-11 pr-4 py-3.5 rounded-[var(--r-md)]
-                  bg-black/30 border border-[var(--border-default)]
-                  text-[14px] text-text placeholder:text-text-3
-                  transition-[border-color,background,box-shadow] duration-200
-                  focus:outline-none focus:border-[var(--accent)]
-                  focus:bg-black/50 focus:shadow-[0_0_0_4px_var(--accent-soft)]
-                  disabled:opacity-60
-                "
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={status === "sending" || !email}
-              className="
-                w-full py-3.5 mt-1 rounded-[var(--r-md)]
-                bg-[var(--accent)] text-black font-semibold text-[14px]
-                transition-[transform,background,opacity] duration-200 ease-[var(--ease-spring)]
-                hover:scale-[1.01] hover:bg-white
-                active:scale-[0.98]
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
-                tracking-[-0.01em]
-                inline-flex items-center justify-center gap-2
-              "
-            >
-              {status === "sending" && (
-                <Loader2 size={15} strokeWidth={2} className="animate-spin" />
-              )}
-              {status === "sending" ? "Enviando..." : "Enviar link"}
-            </button>
-
-            {status === "error" && (
-              <div className="text-[12px] text-[var(--error)] mt-1">
-                {errorMsg || "Erro ao enviar. Tenta de novo."}
-              </div>
-            )}
-          </form>
-
-          <p className="text-[11px] text-text-3 text-center leading-relaxed">
-            Sem senha. Te mandamos um email com um link que te loga na hora.
-          </p>
-        </>
-      )}
+      <p className="text-[11px] text-text-3 text-center leading-relaxed">
+        Primeiro usuário a entrar vira admin automaticamente.
+      </p>
     </div>
   );
 }

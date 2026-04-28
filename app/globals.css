@@ -1,52 +1,94 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────
-   Black Belt Swipe — Graphite Tokens
-   Ver DESIGN.md §4, §5, §6, §7, §8
+   BlackBelt Swipe — Brandbook Tokens
+   Paleta monocromática warm (Ink Black + Shadow Grey + Ivory)
+   Tipografia: Onest. Tagline oficial em weight 300.
    ───────────────────────────────────────────── */
 
 :root {
-  /* Surfaces */
-  --bg: #000000;
-  --bg-glass: rgba(28, 28, 30, 0.72);
-  --bg-glass-hover: rgba(44, 44, 46, 0.82);
-  --bg-surface: #1C1C1E;
-  --bg-elevated: #2C2C2E;
+  /* Surfaces — Ink Black + Shadow Grey */
+  --bg: #070B16;
+  --bg-glass: rgba(22, 24, 36, 0.72);
+  --bg-glass-hover: rgba(30, 33, 50, 0.82);
+  --bg-surface: #161824;
+  --bg-elevated: #1E2132;
 
-  /* Borders */
-  --border-hairline: rgba(255, 255, 255, 0.06);
-  --border-default:  rgba(255, 255, 255, 0.10);
-  --border-strong:   rgba(255, 255, 255, 0.18);
+  /* Borders — Ivory com alpha pra manter warm */
+  --border-hairline: rgba(234, 232, 226, 0.08);
+  --border-default:  rgba(234, 232, 226, 0.14);
+  --border-strong:   rgba(234, 232, 226, 0.22);
 
-  /* Text */
-  --text:    #F5F5F7;
-  --text-2:  #A1A1A6;
-  --text-3:  #6E6E73;
-  --text-4:  #48484A;
+  /* Text — Ivory warm do brandbook */
+  --text:    #EAE8E2;
+  --text-2:  rgba(234, 232, 226, 0.68);
+  --text-3:  rgba(234, 232, 226, 0.42);
+  --text-4:  rgba(234, 232, 226, 0.26);
 
-  /* Accent (Graphite = warm white) */
-  --accent:       #F5F5F7;
-  --accent-glow:  rgba(255, 255, 255, 0.10);
-  --accent-soft:  rgba(255, 255, 255, 0.05);
+  /* Accent = White puro pra contraste máximo sobre ink black */
+  --accent:       #FFFFFF;
+  --accent-hover: #EAE8E2;
+  --accent-glow:  rgba(255, 255, 255, 0.14);
+  --accent-soft:  rgba(255, 255, 255, 0.06);
 
-  /* Semantic */
-  --success: #30D158;
-  --warning: #FF9F0A;
+  /* Semantic — mantidos pra estados funcionais */
+  --success: #7ED957;
+  --warning: #FFB020;
   --error:   #FF453A;
 
-  /* Motion */
+  /* ─── Motion — Apple's canonical curves ─── */
+  /* Non-overshoot spring (iOS/macOS default). Use for hover, focus, scale. */
+  --ease-apple:      cubic-bezier(0.32, 0.72, 0, 1);
+  /* Light overshoot — use for enter/exit, playful moments only. */
   --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Material-ish, for simple state transitions. */
   --ease-standard:   cubic-bezier(0.4, 0, 0.2, 1);
   --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
   --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  /* Emphasized — Apple's long-form curve for big surface changes. */
+  --ease-emphasize:  cubic-bezier(0.2, 0, 0, 1);
 
-  /* Radius */
+  /* Durations (pick one; avoid ad-hoc numbers) */
+  --dur-1: 120ms;  /* hover ripples */
+  --dur-2: 200ms;  /* standard state change */
+  --dur-3: 320ms;  /* card hover */
+  --dur-4: 500ms;  /* section reveal */
+
+  /* Radius — Apple-ish scale, squircle approximation */
+  --r-xs:  6px;
   --r-sm:  8px;
   --r-md:  12px;
   --r-lg:  16px;
-  --r-xl:  20px;
+  --r-xl:  22px;
   --r-2xl: 28px;
+  --r-3xl: 36px;
   --r-pill: 980px;
+
+  /* ─── Shadow system — Apple layered ─── */
+  /* Shadows blend warm-dark + inner highlight; never flat black drops. */
+  --shadow-xs: 0 1px 0 rgba(255,255,255,0.04),
+               0 1px 2px rgba(0,0,0,0.35);
+  --shadow-sm: inset 0 1px 0 rgba(255,255,255,0.05),
+               0 2px 6px rgba(0,0,0,0.35),
+               0 1px 2px rgba(0,0,0,0.28);
+  --shadow-md: inset 0 1px 0 rgba(255,255,255,0.06),
+               0 6px 18px -4px rgba(0,0,0,0.45),
+               0 2px 6px -1px rgba(0,0,0,0.30);
+  --shadow-lg: inset 0 1px 0 rgba(255,255,255,0.08),
+               0 20px 48px -12px rgba(0,0,0,0.55),
+               0 8px 18px -6px rgba(0,0,0,0.40);
+  --shadow-xl: inset 0 1px 0 rgba(255,255,255,0.10),
+               0 36px 72px -20px rgba(0,0,0,0.65),
+               0 14px 28px -10px rgba(0,0,0,0.45);
+  --shadow-glow: 0 0 0 1px var(--accent-soft),
+                 0 0 60px -20px var(--accent-glow);
+
+  /* Hairline — 0.5px on retina, 1px fallback */
+  --hairline: 1px;
+}
+
+@media (min-resolution: 2dppx) {
+  :root { --hairline: 0.5px; }
 }
 
 @theme inline {
@@ -70,15 +112,20 @@
   --color-warning: var(--warning);
   --color-error: var(--error);
 
-  --font-display: var(--font-inter-tight), "Inter Tight", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Font stack — Onest (brandbook oficial) + system fallbacks */
+  --font-display: var(--font-onest), "Onest",
+                  ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans:    var(--font-onest), "Onest",
+                  ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono:    ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --radius-xs:  6px;
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  22px;
   --radius-2xl: 28px;
+  --radius-3xl: 36px;
 }
 
 /* ─────────────────────────────────────────────
@@ -96,11 +143,21 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
-  font-feature-settings: "ss01", "cv11";
-  letter-spacing: -0.01em;
+  /* Onest tem métricas balanceadas — tracking ligeiramente apertado é suficiente */
+  font-feature-settings: "ss01", "ss02";
+  font-variant-ligatures: common-ligatures contextual;
+  font-optical-sizing: auto;
+  letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   min-height: 100vh;
+}
+
+/* Selection — Apple-ish accent tint instead of harsh blue */
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--text);
 }
 
 /* Global accent glow atrás do conteúdo */
@@ -134,10 +191,72 @@ body::after {
    Utility classes
    ───────────────────────────────────────────── */
 
+/* ─── Typography utilities ───
+   Apple's type ramp: larger = tighter tracking, smaller = looser.
+   Use .display-* for headlines, .caption for small meta. */
+
 .display {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
+}
+
+/* Tagline oficial — specs exatas do brandbook
+   "Veja tudo que tentaram te esconder." em Onest 300, line-height 111% */
+.brand-tagline {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(44px, 7vw, 105.494px);
+  line-height: 111%;
+  letter-spacing: -0.02em;
+  color: #EAE8E2;
+}
+
+/* Hero / page titles (>36px) */
+.display-xl {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(32px, 4vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+/* Section titles (~28px) */
+.display-lg {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.12;
+  letter-spacing: -0.028em;
+}
+
+/* Card titles (~17px) */
+.display-md {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.2;
+  letter-spacing: -0.016em;
+}
+
+/* Eyebrow / category labels — uppercase, wide-tracked */
+.eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* Caption — 11px meta, tabular numbers on */
+.caption {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-3);
+  font-feature-settings: "tnum";
+  letter-spacing: -0.005em;
 }
 
 .mono {
@@ -146,31 +265,49 @@ body::after {
   letter-spacing: -0.01em;
 }
 
+/* ─── Glass system — Apple Liquid Glass ─── */
+/* Three tiers for different chrome densities. All share same tint but vary
+   blur/saturation/shadow weight. Inner highlight on top edge simulates the
+   refraction of a physical glass pane. */
+
 .glass {
   background: var(--bg-glass);
-  backdrop-filter: blur(32px) saturate(180%);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
-  border: 1px solid var(--border-hairline);
+  backdrop-filter: blur(28px) saturate(185%);
+  -webkit-backdrop-filter: blur(28px) saturate(185%);
+  border: var(--hairline) solid var(--border-hairline);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 8px 32px rgba(0, 0, 0, 0.4);
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 10px 34px -8px rgba(0, 0, 0, 0.45),
+    0 2px 6px -1px rgba(0, 0, 0, 0.28);
 }
 
 .glass-light {
-  background: var(--bg-glass);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid var(--border-default);
+  background: color-mix(in srgb, var(--bg-glass) 80%, transparent);
+  backdrop-filter: blur(14px) saturate(165%);
+  -webkit-backdrop-filter: blur(14px) saturate(165%);
+  border: var(--hairline) solid var(--border-default);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .glass-strong {
   background: var(--bg-glass);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
-  border: 1px solid var(--border-hairline);
+  backdrop-filter: blur(44px) saturate(200%);
+  -webkit-backdrop-filter: blur(44px) saturate(200%);
+  border: var(--hairline) solid var(--border-hairline);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 20px 60px rgba(0, 0, 0, 0.4);
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025),
+    0 28px 68px -16px rgba(0, 0, 0, 0.55),
+    0 12px 24px -8px rgba(0, 0, 0, 0.35);
+}
+
+/* Inset panel — used for nested content inside a glass card.
+   Subtracts instead of stacks; avoids "glass-on-glass" haze. */
+.glass-inset {
+  background: rgba(0, 0, 0, 0.22);
+  border: var(--hairline) solid rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 /* ─────────────────────────────────────────────
@@ -204,21 +341,32 @@ body::after {
 
 *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px var(--accent-soft), 0 0 0 1px var(--accent);
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px color-mix(in srgb, var(--accent) 80%, transparent),
+    0 0 0 8px var(--accent-soft);
   border-radius: var(--r-sm);
+  transition: box-shadow var(--dur-1) var(--ease-apple);
 }
 
 /* ─────────────────────────────────────────────
    Scrollbar (subtle Apple)
    ───────────────────────────────────────────── */
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: var(--border-default);
   border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background var(--dur-1) var(--ease-standard);
 }
-::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+  background-clip: content-box;
+}
+* { scrollbar-width: thin; scrollbar-color: var(--border-default) transparent; }
 
 /* ─────────────────────────────────────────────
    Animations
@@ -248,36 +396,158 @@ body::after {
   border-radius: var(--r-md);
 }
 
+/* Transcribe overlay — shimmer nos bars + fade no texto de stage */
+@keyframes shimmer-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.shimmer-bar {
+  animation: shimmer-slide 1.4s ease-in-out infinite;
+}
+
+@keyframes stage-fade {
+  0% { opacity: 0; transform: translateY(4px); }
+  15% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+.transcribe-stage-fade {
+  animation: stage-fade 2.5s ease-in-out;
+}
+
+/* Stepper: stage ativo pulsa suavemente */
+@keyframes stepper-active-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(139,92,246,0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(139,92,246,0);
+  }
+}
+.stepper-active {
+  animation: stepper-active-pulse 1.8s ease-in-out infinite;
+}
+
+/* Row "Extraindo..." na lista admin — fundo pulsante + left-border violet */
+@keyframes row-extracting-bg {
+  0%, 100% { background: rgba(139,92,246,0.04); }
+  50%      { background: rgba(139,92,246,0.12); }
+}
+.row-extracting {
+  animation: row-extracting-bg 2.2s ease-in-out infinite;
+  position: relative;
+}
+.row-extracting::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #6366F1 0%, #8B5CF6 100%);
+  box-shadow: 0 0 8px rgba(139,92,246,0.6);
+}
+
 /* ─────────────────────────────────────────────
    OfferCard hover — multi-layer glow/shadow
    ───────────────────────────────────────────── */
 
 .offer-card-hover {
   transition:
-    transform 280ms var(--ease-spring),
-    border-color 240ms var(--ease-standard),
-    background 240ms var(--ease-standard),
-    box-shadow 240ms var(--ease-standard);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 8px 32px rgba(0, 0, 0, 0.4);
+    transform var(--dur-3) var(--ease-apple),
+    border-color var(--dur-2) var(--ease-apple),
+    background var(--dur-2) var(--ease-apple),
+    box-shadow var(--dur-2) var(--ease-apple);
+  box-shadow: var(--shadow-sm);
+  will-change: transform;
 }
 .offer-card-hover:hover {
-  transform: translateY(-3px) scale(1.015);
+  transform: translateY(-2px) scale(1.008);
   border-color: var(--border-strong);
   background: var(--bg-glass-hover);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 12px 40px rgba(0, 0, 0, 0.4),
-    0 0 0 1px var(--accent-soft),
-    0 0 60px -20px var(--accent-glow);
+    var(--shadow-md),
+    var(--shadow-glow);
+}
+.offer-card-hover:active {
+  transform: translateY(-1px) scale(0.998);
+  transition-duration: var(--dur-1);
 }
 
 /* Ofertas com flag "escalando" — glow sutil permanente */
 .offer-card-hot {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 8px 32px rgba(0, 0, 0, 0.4),
+    var(--shadow-sm),
     0 0 0 1px rgba(255, 255, 255, 0.06),
     0 0 50px -25px rgba(255, 255, 255, 0.12);
+}
+
+/* ─────────────────────────────────────────────
+   Apple-style micro-interactions
+   ───────────────────────────────────────────── */
+
+/* Pressable — any element that should feel like a physical button.
+   Apple UI elements have a subtle depression on press, not opacity fade. */
+.pressable {
+  transition: transform var(--dur-1) var(--ease-apple),
+              background var(--dur-2) var(--ease-apple),
+              box-shadow var(--dur-2) var(--ease-apple);
+}
+.pressable:active { transform: scale(0.97); }
+
+/* Lift — used for hover of tappable rows / list items. */
+.lift {
+  transition: background var(--dur-2) var(--ease-apple),
+              transform var(--dur-2) var(--ease-apple);
+}
+.lift:hover { background: var(--bg-glass); }
+
+/* Soft reveal — fade-up stagger for page loads */
+@keyframes soft-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.soft-reveal {
+  animation: soft-reveal var(--dur-4) var(--ease-emphasize) both;
+}
+
+/* Ring — subtle breathing ring for "live/recording" indicators */
+@keyframes ring-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: 0.6; }
+  50%      { box-shadow: 0 0 0 5px transparent; opacity: 1; }
+}
+.ring-breathe { animation: ring-breathe 2s var(--ease-standard) infinite; }
+
+/* Icon hover — Apple's icons subtly scale + brighten on hover */
+.icon-hover {
+  transition: transform var(--dur-1) var(--ease-apple),
+              color var(--dur-1) var(--ease-apple);
+}
+.icon-hover:hover { transform: scale(1.08); }
+
+/* Toast system — slides in from right with slight spring */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* Confirm dialog — fade backdrop + dialog spring */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Performance — content-visibility auto
+   Browser pula layout/paint dos cards que estão fora da viewport.
+   Ganho real em listas com 100+ cards. `contain-intrinsic-size`
+   reserva o tamanho aproximado pro scrollbar não pular.
+   ──────────────────────────────────────────────────────────── */
+.offer-card-optim {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 360px;
 }

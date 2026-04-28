@@ -1,0 +1,34 @@
+# Não copiar lixo pro container
+node_modules
+.next
+.git
+.github
+.vscode
+.cursor
+.cache
+coverage
+out
+build
+*.log
+
+# Env files NUNCA vão pra imagem (Coolify injeta via painel)
+.env
+.env.local
+.env.*.local
+
+# Frontend-only — worker não precisa
+app/
+components/
+public/
+docs/
+*.md
+plano-frontend.md
+brandbook-preview.html
+
+# Migrations + scripts opcionais (incluo só worker/, lib/, supabase/migrations/)
+scripts/
+
+# Test/temp
+/tmp
+*.test.ts
+*.spec.ts

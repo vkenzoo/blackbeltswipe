@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { LogOut, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { logUserEvent } from "@/lib/events/log-event";
 
 type Props = {
   email: string;
@@ -18,6 +19,9 @@ export function UserMenu({ email, name, role }: Props) {
 
   async function logout() {
     setBusy(true);
+    // Loga sign_out ANTES do signOut (await pra garantir que o request complete
+    // antes da sessão ser invalidada)
+    await logUserEvent("sign_out", undefined, { await: true });
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");

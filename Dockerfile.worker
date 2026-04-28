@@ -1,0 +1,78 @@
+# Dockerfile.worker — imagem do worker BBS pro Coolify.
+#
+# O worker é um processo long-running (loop polling jobs + sweeps periódicos
+# + Playwright headless + ffmpeg). NÃO roda no Vercel (serverless).
+#
+# Build:   docker build -f Dockerfile.worker -t bbs-worker .
+# Run:     docker run --env-file .env.local bbs-worker
+#
+# Coolify: subir esse Dockerfile, setar env vars no painel, expor 0 portas
+# (worker não tem HTTP — health via heartbeat no Postgres).
+
+FROM oven/bun:1.2.5-debian AS base
+
+# Deps de sistema:
+#   - playwright chromium precisa de libs do GTK/X11/áudio/fontes
+#   - ffmpeg pra encode de VSL HLS → mp4
+#   - ca-certificates pra HTTPS
+#   - curl pra healthcheck inline
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    ffmpeg \
+    fonts-liberation \
+    fonts-noto-color-emoji \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libatspi2.0-0 \
+    libcairo2 \
+    libcups2 \
+    libdbus-1-3 \
+    libdrm2 \
+    libexpat1 \
+    libgbm1 \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libpango-1.0-0 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxkbcommon0 \
+    libxrandr2 \
+    xdg-utils \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Layer cache: instala deps separado dos source files
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+
+# Playwright baixa Chromium pra ~/.cache/ms-playwright
+# (path padrão Linux). bun resolve via require, segue funcionando.
+RUN bunx playwright install chromium --with-deps || bunx playwright install chromium
+
+# Source code do worker + libs compartilhadas
+# Mantém estrutura idêntica ao repo pra @/ aliases funcionarem
+COPY tsconfig.json ./
+COPY worker/ ./worker/
+COPY lib/ ./lib/
+COPY supabase/ ./supabase/
+
+# Volume opcional pra /tmp (worker usa pra ffmpeg intermediate files)
+VOLUME ["/tmp"]
+
+# Healthcheck: bun --eval verifica se SUPABASE_URL responde + worker_heartbeats
+# row recente (<2min). Coolify reinicia container se falhar 3 vezes seguidas.
+HEALTHCHECK --interval=60s --timeout=20s --start-period=120s --retries=3 \
+  CMD bun --eval "fetch(process.env.NEXT_PUBLIC_SUPABASE_URL+'/rest/v1/worker_heartbeats?select=last_heartbeat_at&order=last_heartbeat_at.desc&limit=1',{headers:{apikey:process.env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+process.env.SUPABASE_SERVICE_ROLE_KEY}}).then(r=>r.json()).then(d=>{const t=new Date(d[0]?.last_heartbeat_at).getTime();if(!t||Date.now()-t>120000)process.exit(1)}).catch(()=>process.exit(1))" || exit 1
+
+# Entry: NÃO usa --env-file (Coolify injeta env vars direto)
+CMD ["bun", "run", "worker/index.ts"]

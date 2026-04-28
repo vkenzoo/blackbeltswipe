@@ -7,6 +7,8 @@ import { thumbGradient } from "@/lib/utils";
 type VslPlayerProps = {
   /** Slug da oferta — usado pra fetchar signed URL */
   slug?: string;
+  /** Título da oferta (pra alt text acessível) */
+  offerTitle?: string;
   /** Se oferta tem vídeo uploadado */
   hasVsl?: boolean;
   /** Thumb público (bucket thumbs) ou null */
@@ -15,8 +17,74 @@ type VslPlayerProps = {
   thumbGradientNumber: number;
 };
 
+/**
+ * Constrói URL pública do thumb a partir do path no bucket `thumbs`.
+ * Retorna null se env var faltando ou path vazio — evita URLs quebradas
+ * tipo "undefined/storage/..." que apareciam antes.
+ */
+function buildThumbUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base) {
+    if (typeof window !== "undefined") {
+      console.warn(
+        "[VslPlayer] NEXT_PUBLIC_SUPABASE_URL não configurado — thumb não será renderizado"
+      );
+    }
+    return null;
+  }
+  // Passa pelo render endpoint pra entregar WebP comprimido no poster.
+  return `${base}/storage/v1/render/image/public/thumbs/${path}?width=800&quality=80&resize=cover`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Signed URL cache — localStorage com expiry
+// URLs assinadas duram 60min no servidor; guardamos 55min pra margem.
+// ─────────────────────────────────────────────────────────────
+
+const VSL_URL_CACHE_TTL_MS = 55 * 60 * 1000; // 55min
+
+function cacheKey(slug: string): string {
+  return `bbs:vsl-url:${slug}`;
+}
+
+function readCachedVslUrl(slug: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(cacheKey(slug));
+    if (!raw) return null;
+    const { url, expiresAt } = JSON.parse(raw) as {
+      url: string;
+      expiresAt: number;
+    };
+    if (!url || Date.now() > expiresAt) {
+      localStorage.removeItem(cacheKey(slug));
+      return null;
+    }
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedVslUrl(slug: string, url: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(
+      cacheKey(slug),
+      JSON.stringify({
+        url,
+        expiresAt: Date.now() + VSL_URL_CACHE_TTL_MS,
+      })
+    );
+  } catch {
+    // localStorage cheio ou desabilitado — apenas ignora
+  }
+}
+
 export function VslPlayer({
   slug,
+  offerTitle,
   hasVsl,
   thumbnailPath,
   thumbGradientNumber,
@@ -31,11 +99,20 @@ export function VslPlayer({
     setLoading(true);
     setErrored(false);
     try {
+      // 1. Tenta pegar URL cached no localStorage (válida por até 55min)
+      const cached = readCachedVslUrl(slug);
+      if (cached) {
+        setSignedUrl(cached);
+        setStarted(true);
+        return;
+      }
+      // 2. Cache miss → fetcha do servidor
       const res = await fetch(`/api/offer/${slug}/vsl-url`, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as { url: string };
       setSignedUrl(data.url);
       setStarted(true);
+      writeCachedVslUrl(slug, data.url);
     } catch (err) {
       console.error("vsl-url fetch failed:", err);
       setErrored(true);
@@ -83,10 +160,8 @@ export function VslPlayer({
   }
 
   // Se já carregou signed URL, renderiza <video>
-  if (started && signedUrl) {
-    const posterUrl = thumbnailPath
-      ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/thumbs/${thumbnailPath}`
-      : undefined;
+  if (started && signedUrl && !errored) {
+    const posterUrl = buildThumbUrl(thumbnailPath) ?? undefined;
 
     return (
       <div className="relative rounded-[var(--r-xl)] overflow-hidden aspect-[16/10] border border-[var(--border-hairline)] bg-black">
@@ -96,8 +171,14 @@ export function VslPlayer({
           controls
           autoPlay
           preload="metadata"
+          playsInline
           className="w-full h-full object-contain"
-          onError={() => setErrored(true)}
+          onError={() => {
+            // Reset pro estado idle pro user clicar play de novo
+            setErrored(true);
+            setStarted(false);
+            setSignedUrl(null);
+          }}
         >
           Seu navegador não suporta vídeo HTML5.
         </video>
@@ -106,9 +187,7 @@ export function VslPlayer({
   }
 
   // Estado idle: thumb + botão grande pra play
-  const posterUrl = thumbnailPath
-    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/thumbs/${thumbnailPath}`
-    : null;
+  const posterUrl = buildThumbUrl(thumbnailPath);
 
   return (
     <button
@@ -131,7 +210,9 @@ export function VslPlayer({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={posterUrl}
-          alt=""
+          alt={
+            offerTitle ? `Capa do VSL de ${offerTitle}` : "Capa do vídeo"
+          }
           className="absolute inset-0 w-full h-full object-cover z-[5]"
         />
       ) : (
@@ -172,9 +253,12 @@ export function VslPlayer({
       </div>
 
       {errored && (
-        <div className="absolute bottom-4 left-4 right-4 z-30 text-center">
-          <span className="text-[12px] text-[var(--error)] font-medium">
-            Erro ao carregar vídeo. Tenta de novo.
+        <div className="absolute bottom-4 left-4 right-4 z-30 flex justify-center">
+          <span
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium text-[var(--error)] border border-[var(--error)]/30"
+            style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)" }}
+          >
+            Erro ao carregar · toca no play pra tentar de novo
           </span>
         </div>
       )}

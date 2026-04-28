@@ -11,7 +11,12 @@ import {
   STRUCTURE_LABELS,
   TRAFFIC_LABELS,
 } from "@/lib/types";
-import { uploadVsl, getVideoDuration } from "@/lib/storage";
+import {
+  uploadVsl,
+  getVideoDuration,
+  generateVideoThumbnail,
+  uploadThumbnail,
+} from "@/lib/storage";
 import { formatDuration } from "@/lib/utils";
 
 const inputStyle = `
@@ -81,6 +86,16 @@ export default function NewOfferPage() {
       // 1. Se tem arquivo VSL, faz upload primeiro
       let vslPayload: Record<string, unknown> = {};
       if (vslFile) {
+        // 1a. Gera thumbnail client-side (best effort, não bloqueia upload)
+        let thumbPath: string | null = null;
+        try {
+          const thumbBlob = await generateVideoThumbnail(vslFile, 3);
+          thumbPath = await uploadThumbnail(finalSlug, thumbBlob);
+        } catch (err) {
+          console.warn("thumb gen/upload falhou, seguindo sem thumb:", err);
+        }
+
+        // 1b. Upload do mp4 (com progress bar)
         const { path, sizeBytes } = await uploadVsl(
           finalSlug,
           vslFile,
@@ -88,6 +103,7 @@ export default function NewOfferPage() {
         );
         vslPayload = {
           vsl_storage_path: path,
+          vsl_thumbnail_path: thumbPath,
           vsl_size_bytes: sizeBytes,
           vsl_duration_seconds: vslDuration,
           vsl_uploaded_at: new Date().toISOString(),

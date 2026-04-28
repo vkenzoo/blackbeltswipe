@@ -1,13 +1,32 @@
+"use client";
+
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type PaginationProps = {
   current?: number;
   total?: number;
+  /** Callback quando user clica numa página. Sem isso, botões não fazem nada. */
+  onChange?: (page: number) => void;
 };
 
-export function Pagination({ current = 1, total = 12 }: PaginationProps) {
+export function Pagination({
+  current = 1,
+  total = 12,
+  onChange,
+}: PaginationProps) {
   const pages = buildPages(current, total);
+
+  const goTo = (p: number) => {
+    if (!onChange) return;
+    const clamped = Math.max(1, Math.min(total, p));
+    if (clamped === current) return;
+    onChange(clamped);
+    // Scroll suave pro topo da lista após trocar de página
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   return (
     <nav
@@ -17,6 +36,7 @@ export function Pagination({ current = 1, total = 12 }: PaginationProps) {
       <button
         type="button"
         disabled={current === 1}
+        onClick={() => goTo(current - 1)}
         className={cn(
           "w-9 h-9 grid place-items-center rounded-full",
           "text-text-2 hover:text-text hover:bg-[var(--bg-glass)]",
@@ -40,6 +60,7 @@ export function Pagination({ current = 1, total = 12 }: PaginationProps) {
           <button
             key={p}
             type="button"
+            onClick={() => goTo(p)}
             className={cn(
               "min-w-9 h-9 px-3 rounded-full text-[13px] font-medium",
               "transition-[background,color] duration-200",
@@ -57,6 +78,7 @@ export function Pagination({ current = 1, total = 12 }: PaginationProps) {
       <button
         type="button"
         disabled={current === total}
+        onClick={() => goTo(current + 1)}
         className={cn(
           "w-9 h-9 grid place-items-center rounded-full",
           "text-text-2 hover:text-text hover:bg-[var(--bg-glass)]",

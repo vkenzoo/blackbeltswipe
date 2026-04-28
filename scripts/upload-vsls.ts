@@ -14,7 +14,7 @@
  */
 
 import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync, rmSync, statSync } from "fs";
-import { execSync } from "child_process";
+import { execSync, spawnSync } from "child_process";
 import { resolve, basename, join } from "path";
 import { createClient } from "@supabase/supabase-js";
 
@@ -72,30 +72,44 @@ if (!existsSync(WORK)) mkdirSync(WORK, { recursive: true });
 // helpers
 // ────────────────────────────────────────────────────────────
 
-type ZipEntry = { zip: string; innerPath: string; size: number };
+type ZipEntry = { zip: string; index: number; name: string; size: number };
+
+const PY_LIST = `
+import zipfile, sys, json
+out = []
+for zpath in sys.argv[1:]:
+    try:
+        with zipfile.ZipFile(zpath) as z:
+            for i, info in enumerate(z.infolist()):
+                if info.filename.lower().endswith('.mp4'):
+                    out.append({'zip': zpath, 'index': i, 'name': info.filename, 'size': info.file_size})
+    except Exception as e:
+        print(f"ERR {zpath}: {e}", file=sys.stderr)
+print(json.dumps(out, ensure_ascii=False))
+`;
+
+const PY_EXTRACT = `
+import zipfile, sys
+zpath, idx, dest = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+with zipfile.ZipFile(zpath) as z:
+    info = z.infolist()[idx]
+    with z.open(info) as src, open(dest, 'wb') as dst:
+        while True:
+            chunk = src.read(1024*1024)
+            if not chunk: break
+            dst.write(chunk)
+`;
 
 function listMp4sInAllZips(): ZipEntry[] {
   const zips = execSync(`ls "${REFS}"/*.zip`, { encoding: "utf-8" })
     .trim()
     .split("\n")
     .filter(Boolean);
-
-  const entries: ZipEntry[] = [];
-  for (const zip of zips) {
-    const out = execSync(`unzip -l "${zip}"`, { encoding: "utf-8" });
-    for (const line of out.split("\n")) {
-      // linhas do unzip -l: "  size  date  time  VSL/VSL - NAME/path/file.mp4"
-      const match = line.match(/^\s*(\d+)\s+\S+\s+\S+\s+(VSL\/VSL - [^/]+\/.+\.mp4)\s*$/);
-      if (match) {
-        entries.push({
-          zip,
-          innerPath: match[2],
-          size: parseInt(match[1], 10),
-        });
-      }
-    }
-  }
-  return entries;
+  const out = execSync(`python3 -c "${PY_LIST.replace(/"/g, '\\"')}" ${zips.map((z) => `"${z}"`).join(" ")}`, {
+    encoding: "utf-8",
+    maxBuffer: 50 * 1024 * 1024,
+  });
+  return JSON.parse(out) as ZipEntry[];
 }
 
 function offerNameFromPath(innerPath: string): string | null {
@@ -103,14 +117,11 @@ function offerNameFromPath(innerPath: string): string | null {
   return m ? m[1].trim() : null;
 }
 
-function extractFromZip(zip: string, innerPath: string, destFile: string): string {
-  // usa -p (pipe to stdout) + shell redirect pra contornar bug UTF-8 do unzip macOS
-  // escapa aspas duplas no innerPath
-  const escaped = innerPath.replace(/"/g, '\\"');
-  execSync(`unzip -p "${zip}" "${escaped}" > "${destFile}"`, {
-    stdio: "pipe",
-    shell: "/bin/bash",
-  });
+function extractFromZip(zip: string, index: number, destFile: string): string {
+  execSync(
+    `python3 -c "${PY_EXTRACT.replace(/"/g, '\\"')}" "${zip}" ${index} "${destFile}"`,
+    { stdio: "pipe" }
+  );
   return destFile;
 }
 
@@ -122,18 +133,19 @@ function getDurationSeconds(mp4: string): number {
     );
     return Math.round(parseFloat(out.trim()));
   }
-  // Fallback: parse duration do stderr do ffmpeg
-  try {
-    execSync(`ffmpeg -i "${mp4}" -f null -`, { encoding: "utf-8", stdio: "pipe" });
-  } catch (e) {
-    // ffmpeg sempre exit 1 com "-f null" mas escreve info em stderr
-    const stderr = (e as { stderr?: Buffer }).stderr?.toString() ?? "";
-    const m = stderr.match(/Duration:\s*(\d+):(\d+):(\d+)/);
-    if (m) {
-      return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseInt(m[3]);
-    }
-  }
-  return 0;
+  // Fallback: ffmpeg -i SEM output file → exit 1 mas imprime metadata em stderr.
+  // Usa spawnSync pra não precisar de try/catch nem esconder stderr.
+  const res = spawnSync("ffmpeg", ["-hide_banner", "-i", mp4], {
+    encoding: "utf-8",
+    timeout: 30_000,
+  });
+  const stderr = res.stderr || "";
+  const m = stderr.match(/Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/);
+  if (!m) return 0;
+  const h = parseInt(m[1], 10);
+  const mi = parseInt(m[2], 10);
+  const s = parseFloat(m[3]); // aceita decimais (e.g. "00:05:33.45")
+  return Math.round(h * 3600 + mi * 60 + s);
 }
 
 function generateThumbnail(mp4: string, outJpg: string) {
@@ -141,6 +153,31 @@ function generateThumbnail(mp4: string, outJpg: string) {
     `ffmpeg -y -ss 00:00:03 -i "${mp4}" -vframes 1 -vf "scale=1280:-2" -q:v 3 "${outJpg}"`,
     { stdio: "pipe" }
   );
+}
+
+/**
+ * Comprime vídeo até caber em maxBytes. Usa ladder crescente de CRF.
+ * Retorna tamanho final em bytes. Throw se não couber nem com CRF 38.
+ */
+function compressToFit(input: string, output: string, maxBytes: number): number {
+  const crfLadder = [28, 32, 35, 38];
+  for (const crf of crfLadder) {
+    execSync(
+      `ffmpeg -y -i "${input}" ` +
+        `-c:v libx264 -crf ${crf} -preset fast ` +
+        `-vf "scale=-2:'min(720,ih)'" ` +
+        `-c:a aac -b:a 64k -ac 1 ` +
+        `-movflags +faststart ` +
+        `"${output}"`,
+      { stdio: "pipe" }
+    );
+    const size = statSync(output).size;
+    console.log(
+      `     CRF ${crf} → ${(size / 1024 / 1024).toFixed(1)}MB ${size <= maxBytes ? "✓" : "(muito grande, aumentando CRF)"}`
+    );
+    if (size <= maxBytes) return size;
+  }
+  throw new Error(`Arquivo ainda > ${maxBytes} bytes com CRF 38 (tentar upgrade Pro ou reduzir resolução)`);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -169,7 +206,7 @@ async function main() {
   type Candidate = { offerName: string; slug: string; entry: ZipEntry };
   const byOffer = new Map<string, ZipEntry[]>();
   for (const e of entries) {
-    const offerName = offerNameFromPath(e.innerPath);
+    const offerName = offerNameFromPath(e.name);
     if (!offerName) continue;
     if (!byOffer.has(offerName)) byOffer.set(offerName, []);
     byOffer.get(offerName)!.push(e);
@@ -177,7 +214,6 @@ async function main() {
 
   const candidates: Candidate[] = [];
   const skipNoSlug: string[] = [];
-  const skipTooBig: string[] = [];
   const skipAlready: string[] = [];
 
   for (const [offerName, zipEntries] of byOffer) {
@@ -196,25 +232,14 @@ async function main() {
       continue;
     }
 
-    // escolhe o MAIOR mp4 que caiba em MAX_BYTES
-    const fits = zipEntries
-      .filter((e) => e.size <= MAX_BYTES)
-      .sort((a, b) => b.size - a.size);
-    if (fits.length === 0) {
-      skipTooBig.push(`${offerName} (menor mp4: ${(Math.min(...zipEntries.map((e) => e.size)) / 1024 / 1024).toFixed(1)}MB)`);
-      continue;
-    }
-    candidates.push({ offerName, slug, entry: fits[0] });
+    // escolhe o MAIOR mp4 (vai comprimir se > 50MB)
+    const sorted = [...zipEntries].sort((a, b) => b.size - a.size);
+    candidates.push({ offerName, slug, entry: sorted[0] });
   }
 
   console.log(`✅ ${candidates.length} ofertas pra processar`);
   console.log(`⏭️  ${skipAlready.length} já tinham VSL (idempotente)`);
   console.log(`⏭️  ${skipNoSlug.length} sem match no DB`);
-  console.log(`⏭️  ${skipTooBig.length} todos os mp4 > 50MB`);
-  if (skipTooBig.length > 0) {
-    console.log("\n   Pulados (todos > 50MB):");
-    skipTooBig.forEach((s) => console.log(`   - ${s}`));
-  }
   console.log();
 
   if (candidates.length === 0) {
@@ -238,14 +263,28 @@ async function main() {
       // Extrair
       console.log("  📂 extraindo...");
       const mp4Path = join(workDir, "vsl.mp4");
-      extractFromZip(entry.zip, entry.innerPath, mp4Path);
+      extractFromZip(entry.zip, entry.index, mp4Path);
 
-      // Metadata
+      // Metadata original
       const duration = getDurationSeconds(mp4Path);
-      const actualSize = statSync(mp4Path).size;
-      console.log(`     ${duration}s · ${(actualSize / 1024 / 1024).toFixed(1)}MB`);
+      const originalSize = statSync(mp4Path).size;
+      const originalMB = (originalSize / 1024 / 1024).toFixed(1);
+      console.log(`     ${duration}s · ${originalMB}MB original`);
 
-      // Thumbnail
+      // Comprimir se necessário
+      let uploadPath = mp4Path;
+      let finalSize = originalSize;
+      if (originalSize > MAX_BYTES) {
+        console.log(`  🗜️  comprimindo (ffmpeg H.264 720p)...`);
+        const compressedPath = join(workDir, "compressed.mp4");
+        finalSize = compressToFit(mp4Path, compressedPath, MAX_BYTES);
+        uploadPath = compressedPath;
+        const finalMB = (finalSize / 1024 / 1024).toFixed(1);
+        const ratio = (originalSize / finalSize).toFixed(1);
+        console.log(`     ${originalMB}MB → ${finalMB}MB (${ratio}× menor)`);
+      }
+
+      // Thumbnail (gera do arquivo original pra melhor qualidade)
       console.log("  🖼️  gerando thumb...");
       const thumbPath = join(workDir, "thumb.jpg");
       generateThumbnail(mp4Path, thumbPath);
@@ -253,7 +292,7 @@ async function main() {
 
       // Upload mp4
       console.log("  ⬆️  upload mp4...");
-      const mp4Buf = readFileSync(mp4Path);
+      const mp4Buf = readFileSync(uploadPath);
       const mp4Key = `${slug}.mp4`;
       const { error: mp4Err } = await supa.storage
         .from("vsls")
@@ -284,7 +323,7 @@ async function main() {
           vsl_storage_path: mp4Key,
           vsl_thumbnail_path: thumbKey,
           vsl_duration_seconds: duration,
-          vsl_size_bytes: actualSize,
+          vsl_size_bytes: finalSize,
           vsl_uploaded_at: new Date().toISOString(),
         })
         .eq("slug", slug);
@@ -305,10 +344,6 @@ async function main() {
   console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
   console.log(`✅ ${ok}/${candidates.length} VSLs uploadadas`);
   if (fail > 0) console.log(`❌ ${fail} falhas`);
-  if (skipTooBig.length > 0) {
-    console.log(`\n⚠️  ${skipTooBig.length} ofertas ficaram sem VSL (todos os mp4 > 50MB)`);
-    console.log(`   Pra subir elas: upgrade Supabase Pro OU compressão via ffmpeg`);
-  }
 }
 
 main().catch((err) => {

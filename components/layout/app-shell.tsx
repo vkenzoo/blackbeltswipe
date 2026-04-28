@@ -53,10 +53,11 @@ export function AppShell({
         className="
           lg:hidden
           fixed top-0 left-0 right-0 z-40
-          h-14 px-4
+          h-[52px] px-4
           flex items-center justify-between
-          glass
           border-b border-[var(--border-hairline)]
+          bg-[color-mix(in_srgb,var(--bg-surface)_90%,transparent)]
+          backdrop-blur-[28px] backdrop-saturate-[185%]
         "
       >
         <Logo size="sm" />
@@ -64,13 +65,14 @@ export function AppShell({
           type="button"
           onClick={() => setOpen(true)}
           className="
-            p-2 -mr-2 rounded-[var(--r-sm)]
-            text-text-2 hover:text-text hover:bg-[var(--bg-elevated)]
-            transition-colors duration-200
+            pressable
+            grid place-items-center w-9 h-9 -mr-1 rounded-full
+            text-text-2 hover:text-text
+            hover:bg-[var(--bg-elevated)]
           "
           aria-label="Abrir menu"
         >
-          <Menu size={20} strokeWidth={1.5} />
+          <Menu size={18} strokeWidth={1.8} />
         </button>
       </header>
 
@@ -99,7 +101,7 @@ export function AppShell({
         <div
           className={`
             absolute left-0 top-0 bottom-0 w-[280px]
-            transition-transform duration-300 ease-[var(--ease-standard)]
+            transition-transform duration-[400ms] ease-[var(--ease-emphasize)]
             ${open ? "translate-x-0" : "-translate-x-full"}
           `}
         >
@@ -108,22 +110,22 @@ export function AppShell({
             type="button"
             onClick={() => setOpen(false)}
             className="
+              pressable
               absolute top-3 right-3 z-10
               w-9 h-9 rounded-full
               grid place-items-center
               bg-[var(--bg-elevated)] text-text-2 hover:text-text
               border border-[var(--border-default)]
-              transition-colors duration-200
             "
             aria-label="Fechar menu"
           >
-            <X size={16} strokeWidth={1.5} />
+            <X size={16} strokeWidth={1.8} />
           </button>
         </div>
       </div>
 
       {/* Main content */}
-      <main className="lg:ml-[260px] min-h-screen pt-14 lg:pt-0">{children}</main>
+      <main className="lg:ml-[248px] min-h-screen pt-[52px] lg:pt-0">{children}</main>
     </div>
   );
 }

@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BlackBelt Swipe — Brandbook Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Surfaces */
+    --bg: #070B16;
+    --bg-glass: rgba(22, 24, 36, 0.72);
+    --bg-glass-hover: rgba(30, 33, 50, 0.82);
+    --bg-surface: #161824;
+    --bg-elevated: #1E2132;
+
+    /* Borders */
+    --border-hairline: rgba(234, 232, 226, 0.08);
+    --border-default: rgba(234, 232, 226, 0.14);
+    --border-strong: rgba(234, 232, 226, 0.22);
+
+    /* Text — Ivory warm */
+    --text: #EAE8E2;
+    --text-2: rgba(234, 232, 226, 0.68);
+    --text-3: rgba(234, 232, 226, 0.42);
+    --text-4: rgba(234, 232, 226, 0.26);
+
+    /* Accent = White puro pra destaque máximo */
+    --accent: #FFFFFF;
+    --accent-hover: #EAE8E2;
+    --accent-glow: rgba(255, 255, 255, 0.14);
+    --accent-soft: rgba(255, 255, 255, 0.06);
+
+    /* Semantic */
+    --success: #7ED957;
+    --warning: #FFB020;
+    --error: #FF453A;
+
+    /* Motion */
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Radius */
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-xl: 20px;
+    --r-pill: 980px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Onest", ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 80px 40px;
+  }
+
+  /* ─── Typography ─── */
+  .display {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .mono {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-feature-settings: "tnum";
+  }
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-3);
+  }
+
+  h1.display {
+    font-size: 48px;
+    font-weight: 600;
+  }
+  h2.display {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  h3.display {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  /* ─── Layout helpers ─── */
+  .section {
+    margin-bottom: 96px;
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-hairline);
+  }
+  .section-head h2 {
+    font-size: 26px;
+  }
+  .section-head .counter {
+    font-size: 13px;
+    color: var(--text-4);
+    font-feature-settings: "tnum";
+  }
+
+  /* ─── Hero header ─── */
+  .hero {
+    padding: 96px 40px 64px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  .hero-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.24em;
+    color: var(--text-3);
+    margin-bottom: 16px;
+  }
+  /* Tagline oficial — specs do brandbook: Onest 300, line-height 111%, #EAE8E2 */
+  .hero h1 {
+    color: #EAE8E2;
+    font-family: "Onest", ui-sans-serif, system-ui, sans-serif;
+    font-size: 105.494px;
+    font-style: normal;
+    font-weight: 300;
+    line-height: 111%;
+    letter-spacing: -0.02em;
+    max-width: 880px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--text-3);
+  }
+  .hero-sub {
+    margin-top: 24px;
+    font-size: 15px;
+    color: var(--text-2);
+    max-width: 560px;
+    line-height: 1.6;
+  }
+
+  /* ─── Palette ─── */
+  .palette {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .swatch {
+    border-radius: var(--r-lg);
+    padding: 20px;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid var(--border-hairline);
+  }
+  .swatch .name {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+  .swatch .meta {
+    font-size: 11px;
+    font-family: ui-monospace, "SF Mono", monospace;
+    opacity: 0.6;
+  }
+  .swatch .meta strong {
+    display: block;
+    font-size: 13px;
+    opacity: 1;
+    margin-bottom: 2px;
+    font-weight: 500;
+  }
+
+  /* ─── Type specimens ─── */
+  .type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .type-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--r-lg);
+    padding: 28px;
+  }
+  .weight-row {
+    display: flex;
+    gap: 32px;
+    align-items: baseline;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border-hairline);
+  }
+  .weight-row:last-child { border: none; }
+  .weight-label {
+    font-size: 11px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    min-width: 80px;
+  }
+  .weight-sample {
+    font-size: 32px;
+    letter-spacing: -0.02em;
+  }
+  .sample-body {
+    font-size: 15px;
+    color: var(--text-2);
+    line-height: 1.7;
+    margin-top: 16px;
+  }
+  .sample-numbers {
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    margin-top: 20px;
+    font-feature-settings: "tnum";
+  }
+
+  /* ─── Logo ─── */
+  .logo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .logo-card {
+    border-radius: var(--r-lg);
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+  }
+  .logo-card.dark {
+    background: #070B16;
+    border: 1px solid var(--border-hairline);
+  }
+  .logo-card.light {
+    background: #FBFFEF;
+    color: #070B16;
+  }
+  .logo-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    opacity: 0.5;
+  }
+
+  .brand-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-mark {
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .brand-mark.dark-on-light { background: #070B16; color: #FFFFFF; }
+  .brand-mark.light-on-dark { background: #FFFFFF; color: #070B16; }
+  .brand-wordmark {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    line-height: 1;
+  }
+  .brand-wordmark .row1 {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 1px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .brand-wordmark .bold {
+    font-weight: 700;
+  }
+  .brand-wordmark .regular {
+    font-weight: 400;
+  }
+  .brand-wordmark .swipe {
+    font-size: 0.35em;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    opacity: 0.9;
+    margin-top: 3px;
+    font-weight: 500;
+    padding-left: 1px;
+  }
+
+  /* Tamanhos do logo — radius ~24% pra bater com iOS-squircle do brandbook */
+  .brand-sm .brand-mark { width: 28px; height: 28px; border-radius: 7px; }
+  .brand-sm .brand-mark svg { width: 28px; height: 28px; }
+  .brand-sm .brand-wordmark { font-size: 14px; }
+
+  .brand-md .brand-mark { width: 40px; height: 40px; border-radius: 10px; }
+  .brand-md .brand-mark svg { width: 40px; height: 40px; }
+  .brand-md .brand-wordmark { font-size: 20px; }
+
+  .brand-lg .brand-mark { width: 64px; height: 64px; border-radius: 16px; }
+  .brand-lg .brand-mark svg { width: 64px; height: 64px; }
+  .brand-lg .brand-wordmark { font-size: 32px; letter-spacing: -0.02em; }
+
+  /* ─── Components ─── */
+  .components-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .component-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--r-lg);
+    padding: 24px;
+  }
+  .component-card h3 {
+    margin-bottom: 16px;
+  }
+  .row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .row + .row { margin-top: 12px; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 18px;
+    height: 36px;
+    border-radius: var(--r-pill);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 180ms var(--ease-standard);
+    font-feature-settings: "ss01";
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #070B16;
+    font-weight: 600;
+  }
+  .btn-primary:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+  .btn-secondary {
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    color: var(--text);
+    border: 1px solid var(--border-default);
+  }
+  .btn-secondary:hover {
+    background: var(--bg-glass-hover);
+    border-color: var(--border-strong);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-2);
+  }
+  .btn-ghost:hover {
+    color: var(--text);
+    background: var(--bg-glass);
+  }
+  .btn-destructive {
+    background: transparent;
+    color: var(--error);
+  }
+  .btn-destructive:hover {
+    background: color-mix(in srgb, var(--error) 10%, transparent);
+  }
+
+  /* Pills */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: var(--r-pill);
+    font-size: 11px;
+    font-weight: 500;
+    font-feature-settings: "ss01";
+  }
+  .pill-active { background: color-mix(in srgb, var(--success) 16%, transparent); color: var(--success); }
+  .pill-paused { background: color-mix(in srgb, var(--error) 14%, transparent); color: var(--error); }
+  .pill-draft { background: var(--bg-elevated); color: var(--text-3); }
+  .pill .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* Input */
+  .input-wrapper {
+    position: relative;
+    width: 100%;
+  }
+  .input {
+    width: 100%;
+    height: 40px;
+    padding: 0 14px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-md);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color 160ms, box-shadow 160ms;
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .input::placeholder { color: var(--text-4); }
+
+  .input-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  /* ─── Offer card mockup ─── */
+  .offer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .offer-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--r-xl);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    cursor: pointer;
+    transition: transform 240ms var(--ease-spring), border-color 240ms;
+  }
+  .offer-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-strong);
+  }
+  .offer-thumb {
+    aspect-ratio: 16 / 10;
+    border-radius: var(--r-md);
+    background: linear-gradient(135deg, #1C1F2E 0%, #272B3F 100%);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border-hairline);
+  }
+  .offer-thumb::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.5) 100%);
+    pointer-events: none;
+  }
+  .offer-score {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(7, 11, 22, 0.72);
+    backdrop-filter: blur(8px);
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: var(--r-pill);
+    font-feature-settings: "tnum";
+    border: 1px solid var(--border-hairline);
+    z-index: 1;
+  }
+  .offer-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .offer-date {
+    font-size: 10px;
+    color: var(--text-4);
+    font-family: ui-monospace, monospace;
+    font-feature-settings: "tnum";
+  }
+  .offer-heart {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: var(--text-3);
+    font-size: 11px;
+  }
+  .offer-title {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .offer-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-3);
+  }
+  .offer-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-4); }
+
+  /* ─── Sidebar mockup ─── */
+  .mock-app {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-hairline);
+    min-height: 360px;
+  }
+  .mock-sidebar {
+    background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
+    backdrop-filter: blur(28px);
+    border-right: 1px solid var(--border-hairline);
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .mock-sidebar .brand { padding: 4px 8px; }
+  .mock-nav-group + .mock-nav-group {
+    border-top: 1px solid var(--border-hairline);
+    padding-top: 16px;
+  }
+  .mock-nav-head {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-3);
+    padding: 0 8px;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .mock-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+  }
+  .mock-nav-item.active {
+    background: var(--bg-glass);
+    color: var(--text);
+  }
+  .mock-nav-item.active::before {
+    content: "";
+    position: absolute;
+    left: -6px; top: 50%;
+    transform: translateY(-50%);
+    width: 3px; height: 16px;
+    background: var(--accent);
+    border-radius: var(--r-pill);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+  .mock-nav-item .icon {
+    width: 14px; height: 14px;
+    background: currentColor;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    opacity: 0.6;
+    border-radius: 3px;
+  }
+  .mock-nav-badge {
+    margin-left: auto;
+    background: color-mix(in srgb, #FFB020 22%, transparent);
+    color: #FFB020;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: var(--r-pill);
+    font-weight: 600;
+    font-feature-settings: "tnum";
+    border: 1px solid color-mix(in srgb, #FFB020 40%, transparent);
+  }
+  .mock-main {
+    padding: 24px;
+    background: var(--bg);
+  }
+  .mock-main h3.display {
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+  .mock-main .subtitle {
+    font-size: 13px;
+    color: var(--text-2);
+    margin-bottom: 24px;
+  }
+
+  /* ─── Login hero ─── */
+  .login-hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--r-xl);
+    padding: 64px;
+    min-height: 440px;
+  }
+  .login-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 24px;
+  }
+  .login-tagline {
+    font-size: 42px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+  .login-subtitle {
+    color: var(--text-2);
+    font-size: 15px;
+    max-width: 380px;
+    line-height: 1.6;
+  }
+  .login-form {
+    background: var(--bg);
+    border: 1px solid var(--border-default);
+    border-radius: var(--r-lg);
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-self: center;
+    width: 100%;
+  }
+  .login-form .btn-primary { height: 44px; width: 100%; justify-content: center; }
+
+  /* ─── Footer ─── */
+  .footer {
+    text-align: center;
+    padding: 40px;
+    font-size: 11px;
+    color: var(--text-4);
+    border-top: 1px solid var(--border-hairline);
+    margin-top: 80px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HERO
+     ═══════════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-eyebrow">Brandbook Preview · 2026-04-22</div>
+  <h1>Veja tudo que tentaram <em>te esconder.</em></h1>
+  <p class="hero-sub">
+    Preview do novo design system do BlackBelt Swipe. Paleta monocromática warm
+    (preto + cream), tipografia Space Grotesk, marca com T-mark geométrico.
+    Role pra ver componentes, mockups e propagação das decisões pelo produto.
+  </p>
+</section>
+
+<div class="page">
+
+  <!-- ─── 1. Paleta ─── -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="display">01 · Paleta</h2>
+      <span class="counter">5 cores</span>
+    </div>
+    <div class="palette">
+      <div class="swatch" style="background: #070B16; color: #FBFFEF;">
+        <div class="name">Ink Black</div>
+        <div class="meta">
+          <strong>#070B16</strong>
+          HSL 223 52 6<br>
+          Background primary
+        </div>
+      </div>
+      <div class="swatch" style="background: #161824; color: #FBFFEF;">
+        <div class="name">Shadow Grey</div>
+        <div class="meta">
+          <strong>#161824</strong>
+          HSL 233 23 11<br>
+          Cards + elevated surfaces
+        </div>
+      </div>
+      <div class="swatch" style="background: #FFFFFF; color: #070B16;">
+        <div class="name">White</div>
+        <div class="meta">
+          <strong>#FFFFFF</strong>
+          HSL 0 0 100<br>
+          CTAs + focus ring
+        </div>
+      </div>
+      <div class="swatch" style="background: #FBFFEF; color: #070B16;">
+        <div class="name">Ivory</div>
+        <div class="meta">
+          <strong>#FBFFEF</strong>
+          HSL 75 100 97<br>
+          Texto padrão (warm white)
+        </div>
+      </div>
+      <div class="swatch" style="background: #5C5C5C; color: #FBFFEF;">
+        <div class="name">Grey Mid</div>
+        <div class="meta">
+          <strong>#5C5C5C</strong>
+          HSL 0 0 36<br>
+          Borders / disabled
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 2. Tipografia ─── -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="display">02 · Tipografia</h2>
+      <span class="counter">Space Grotesk</span>
+    </div>
+    <div class="type-grid">
+      <div class="type-card">
+        <div class="eyebrow" style="margin-bottom: 16px;">Pesos</div>
+        <div class="weight-row">
+          <span class="weight-label">Light · 300</span>
+          <span class="weight-sample" style="font-weight: 300;">Aa</span>
+        </div>
+        <div class="weight-row">
+          <span class="weight-label">Regular · 400</span>
+          <span class="weight-sample" style="font-weight: 400;">Aa</span>
+        </div>
+        <div class="weight-row">
+          <span class="weight-label">Medium · 500</span>
+          <span class="weight-sample" style="font-weight: 500;">Aa</span>
+        </div>
+        <div class="weight-row">
+          <span class="weight-label">Semi Bold · 600</span>
+          <span class="weight-sample" style="font-weight: 600;">Aa</span>
+        </div>
+        <div class="weight-row">
+          <span class="weight-label">Bold · 700</span>
+          <span class="weight-sample" style="font-weight: 700;">Aa</span>
+        </div>
+      </div>
+      <div class="type-card">
+        <div class="eyebrow" style="margin-bottom: 16px;">Aplicação</div>
+        <h3 class="display" style="font-size: 28px; letter-spacing: -0.035em;">
+          Sistema de curadoria
+        </h3>
+        <p class="sample-body">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse
+          tincidunt consequat mi, ac elementum ante mattis sit amet.
+          Aliquam egestas risus gravida ligula maximus efficitur.
+        </p>
+        <div class="sample-numbers">0 1 2 3 4 5 6 7 8 9 · $1,247 · 98%</div>
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
+          <span class="pill pill-active"><span class="dot"></span>active</span>
+          <span class="pill pill-paused">paused</span>
+          <span class="pill pill-draft">draft</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 3. Logo ─── -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="display">03 · Logo</h2>
+      <span class="counter">Mark + Wordmark</span>
+    </div>
+    <div class="logo-grid">
+      <div class="logo-card dark">
+        <span class="logo-label">Dark · padrão do app</span>
+        <div class="brand-logo brand-lg">
+          <div class="brand-mark light-on-dark">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <!-- Paths exatos do brandbook (Frame 56 (1).svg), normalizados pra 0-100 -->
+              <path d="M82.147 30.206 V46.11 H68.937 L58.906 30.206 H82.147 Z" fill="currentColor"/>
+              <path d="M14.735 30.206 V46.11 L33.442 47.034 L38.58 34.957 L35.544 30.206 H14.735 Z" fill="currentColor"/>
+              <path d="M67.089 74.223 L78.703 67.03 L55.804 30.206 H39.042 Z" fill="currentColor"/>
+              <path d="M38.862 78.002 L26.569 69.604 L40.295 37.531 L49.666 51.786 Z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="brand-wordmark">
+            <span class="row1"><span class="bold">Black</span><span class="regular">Belt</span></span>
+            <span class="swipe">Swipe</span>
+          </div>
+        </div>
+
+        <div class="brand-logo brand-md" style="margin-top: 16px;">
+          <div class="brand-mark light-on-dark">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M83 31 V47 H70 L60 31 Z" fill="currentColor"/>
+              <path d="M15 31 V47 L33 48 L38 36 L35 31 Z" fill="currentColor"/>
+              <path d="M67 76 L79 69 L56 31 H40 Z" fill="currentColor"/>
+              <path d="M39 80 L27 71 L41 38 L50 53 Z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="brand-wordmark">
+            <span class="row1"><span class="bold">Black</span><span class="regular">Belt</span></span>
+            <span class="swipe">Swipe</span>
+          </div>
+        </div>
+
+        <div class="brand-logo brand-sm">
+          <div class="brand-mark light-on-dark">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M83 31 V47 H70 L60 31 Z" fill="currentColor"/>
+              <path d="M15 31 V47 L33 48 L38 36 L35 31 Z" fill="currentColor"/>
+              <path d="M67 76 L79 69 L56 31 H40 Z" fill="currentColor"/>
+              <path d="M39 80 L27 71 L41 38 L50 53 Z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="brand-wordmark">
+            <span class="row1"><span class="bold">Black</span><span class="regular">Belt</span></span>
+            <span class="swipe">Swipe</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="logo-card light">
+        <span class="logo-label">Light · material impresso / OG images</span>
+        <div class="brand-logo brand-lg">
+          <div class="brand-mark dark-on-light">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M82.147 30.206 V46.11 H68.937 L58.906 30.206 H82.147 Z" fill="white"/>
+              <path d="M14.735 30.206 V46.11 L33.442 47.034 L38.58 34.957 L35.544 30.206 H14.735 Z" fill="white"/>
+              <path d="M67.089 74.223 L78.703 67.03 L55.804 30.206 H39.042 Z" fill="white"/>
+              <path d="M38.862 78.002 L26.569 69.604 L40.295 37.531 L49.666 51.786 Z" fill="white"/>
+            </svg>
+          </div>
+          <div class="brand-wordmark">
+            <span class="row1"><span class="bold">Black</span><span class="regular">Belt</span></span>
+            <span class="swipe">Swipe</span>
+          </div>
+        </div>
+        <p style="font-size: 12px; opacity: 0.6; max-width: 320px; text-align: center; line-height: 1.6;">
+          Variante invertida usada em PDFs, materiais impressos, OG images com fundo claro.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 4. Componentes ─── -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="display">04 · Componentes</h2>
+      <span class="counter">Botões · Inputs · Pills</span>
+    </div>
+    <div class="components-grid">
+      <div class="component-card">
+        <h3 class="display">Botões</h3>
+        <div class="row">
+          <button class="btn btn-primary">Salvar alterações</button>
+          <button class="btn btn-secondary">Cancelar</button>
+          <button class="btn btn-ghost">Ignorar</button>
+          <button class="btn btn-destructive">Excluir</button>
+        </div>
+        <div class="row" style="margin-top: 20px;">
+          <button class="btn btn-primary" style="height: 44px; font-size: 14px;">
+            ⚡ Preencher com IA
+          </button>
+          <button class="btn btn-secondary" style="height: 44px;">
+            ✓ Validar token
+          </button>
+        </div>
+      </div>
+
+      <div class="component-card">
+        <h3 class="display">Inputs</h3>
+        <label class="input-label">Título da oferta</label>
+        <div class="input-wrapper">
+          <input class="input" placeholder="Ex: Método do iogurte gelado" autofocus>
+        </div>
+        <label class="input-label" style="margin-top: 16px;">URL da landing</label>
+        <div class="input-wrapper">
+          <input class="input" placeholder="https://" value="https://techpauloborges.com">
+        </div>
+      </div>
+
+      <div class="component-card">
+        <h3 class="display">Status pills</h3>
+        <div class="row">
+          <span class="pill pill-active"><span class="dot"></span>Escalando</span>
+          <span class="pill pill-active"><span class="dot"></span>active</span>
+          <span class="pill pill-paused">paused</span>
+          <span class="pill pill-draft">draft</span>
+          <span class="pill" style="background: var(--bg-elevated); color: var(--text);">
+            scale 87
+          </span>
+        </div>
+      </div>
+
+      <div class="component-card">
+        <h3 class="display">Badges & notificações</h3>
+        <div class="row">
+          <span class="pill" style="background: var(--accent-soft); color: var(--text); border: 1px solid var(--border-default);">
+            ✨ IA sugeriu 4 campos
+          </span>
+          <span class="pill" style="background: color-mix(in srgb, #FFB020 14%, transparent); color: #FFB020;">
+            17 pendentes
+          </span>
+          <span class="pill" style="background: color-mix(in srgb, #FF453A 12%, transparent); color: #FF453A;">
+            ⚠ Token expirou
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 5. Offer cards ─── -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="display">05 · Dashboard · Offer cards</h2>
+      <span class="counter">Mockup do /app</span>
+    </div>
+    <div class="offer-grid">
+      <div class="offer-card">
+        <div class="offer-thumb">
+          <span class="offer-score">🔥 87</span>
+        </div>
+        <div class="offer-header-row">
+          <span class="offer-date">18 abr 26</span>
+          <div style="display: flex; gap: 2px;">
+            <span class="offer-heart">♥</span>
+            <span class="offer-heart">⋯</span>
+          </div>
+        </div>
+        <div class="offer-title">Quiz Bottrel — Propósito pra mulheres 35+</div>
+        <div class="offer-meta">
+          <span>🌱 Desenvolvimento</span><span class="dot"></span>
+          <span>🇧🇷 PT-BR</span><span class="dot"></span>
+          <span>Quiz</span>
+        </div>
+      </div>
+      <div class="offer-card">
+        <div class="offer-thumb" style="background: linear-gradient(135deg, #2A1F1A 0%, #3F2A1F 100%);">
+          <span class="offer-score">📈 64</span>
+        </div>
+        <div class="offer-header-row">
+          <span class="offer-date">15 abr 26</span>
+          <div style="display: flex; gap: 2px;">
+            <span class="offer-heart">♥</span>
+            <span class="offer-heart">⋯</span>
+          </div>
+        </div>
+        <div class="offer-title">Método Eurodrop — Dropshipping pra Europa</div>
+        <div class="offer-meta">
+          <span>📦 Ecommerce</span><span class="dot"></span>
+          <span>🇧🇷 PT-BR</span><span class="dot"></span>
+          <span>VSL</span>
+        </div>
+      </div>
+      <div class="offer-card">
+        <div class="offer-thumb" style="background: linear-gradient(135deg, #1F2A2A 0%, #2F3F3F 100%);">
+          <span class="offer-score">🌡 42</span>
+        </div>
+        <div class="offer-header-row">
+          <span class="offer-date">09 abr 26</span>
+          <div style="display: flex; gap: 2px;">
+            <span class="offer-heart">♥</span>
+            <span class="offer-heart">⋯</span>
+          </div>
+        </div>
+        <div class="offer-title">Nathália Beauty — Maquiagem profissional em 7 dias</div>
+        <div class="offer-meta">
+          <span>💄 Beleza</span><span class="dot"></span>
+          <span>🇧🇷 PT-BR</span><span class="dot"></span>
+          <span>VSL</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 6. Sidebar + main ─── -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="display">06 · Admin · Sidebar + navegação</h2>
+      <span class="counter">Mockup de /admin</span>
+    </div>
+    <div class="mock-app">
+      <aside class="mock-sidebar">
+        <div class="brand brand-sm brand-logo" style="padding: 4px 8px;">
+          <div class="brand-mark light-on-dark">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M83 31 V47 H70 L60 31 Z" fill="currentColor"/>
+              <path d="M15 31 V47 L33 48 L38 36 L35 31 Z" fill="currentColor"/>
+              <path d="M67 76 L79 69 L56 31 H40 Z" fill="currentColor"/>
+              <path d="M39 80 L27 71 L41 38 L50 53 Z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="brand-wordmark" style="font-size: 13px;">
+            <span class="bold">BlackBelt</span><span class="regular">Swipe</span>
+          </div>
+        </div>
+
+        <div class="mock-nav-group">
+          <div class="mock-nav-head">Geral</div>
+          <div class="mock-nav-item">▣ Dashboard</div>
+          <div class="mock-nav-item">🏆 100 Ofertas</div>
+          <div class="mock-nav-item">🎬 Criativos</div>
+          <div class="mock-nav-item">📄 Páginas</div>
+        </div>
+
+        <div class="mock-nav-group">
+          <div class="mock-nav-head">Admin</div>
+          <div class="mock-nav-item">⚙ Ofertas</div>
+          <div class="mock-nav-item active">
+            ✨ AI Suggest
+            <span class="mock-nav-badge">26</span>
+          </div>
+          <div class="mock-nav-item">✓ Aprovações <span class="mock-nav-badge" style="background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); border-color: var(--border-strong);">17</span></div>
+          <div class="mock-nav-item">⚡ Workers</div>
+          <div class="mock-nav-item">📡 Meta API</div>
+          <div class="mock-nav-item">📊 Logs</div>
+        </div>
+      </aside>
+
+      <main class="mock-main">
+        <div class="eyebrow" style="margin-bottom: 6px;">✨ AI Suggest</div>
+        <h3 class="display">Gerenciamento de sugestões</h3>
+        <p class="subtitle">
+          26 drafts aguardando revisão. Nenhum valor é aplicado automaticamente.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
+          <div class="component-card" style="padding: 16px;">
+            <div class="eyebrow">Pendentes</div>
+            <div class="display" style="font-size: 22px; margin-top: 6px; color: #FFB020;">26</div>
+          </div>
+          <div class="component-card" style="padding: 16px;">
+            <div class="eyebrow">Aceitos</div>
+            <div class="display" style="font-size: 22px; margin-top: 6px; color: var(--success);">142</div>
+          </div>
+          <div class="component-card" style="padding: 16px;">
+            <div class="eyebrow">Descartados</div>
+            <div class="display" style="font-size: 22px; margin-top: 6px;">8</div>
+          </div>
+          <div class="component-card" style="padding: 16px;">
+            <div class="eyebrow">Custo total</div>
+            <div class="display mono" style="font-size: 22px; margin-top: 6px;">$0.342</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="btn btn-primary">Aceitar todas sugestões</button>
+          <button class="btn btn-secondary">Re-gerar</button>
+          <button class="btn btn-destructive">Descartar</button>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ─── 7. Login Hero ─── -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="display">07 · Login · Hero com tagline</h2>
+      <span class="counter">Mockup de /login</span>
+    </div>
+    <div class="login-hero">
+      <div class="login-left">
+        <div class="brand-logo brand-md">
+          <div class="brand-mark light-on-dark">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M83 31 V47 H70 L60 31 Z" fill="currentColor"/>
+              <path d="M15 31 V47 L33 48 L38 36 L35 31 Z" fill="currentColor"/>
+              <path d="M67 76 L79 69 L56 31 H40 Z" fill="currentColor"/>
+              <path d="M39 80 L27 71 L41 38 L50 53 Z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="brand-wordmark">
+            <span class="row1"><span class="bold">Black</span><span class="regular">Belt</span></span>
+            <span class="swipe">Swipe</span>
+          </div>
+        </div>
+        <h2 class="login-tagline">
+          Veja tudo que tentaram<br>te esconder.
+        </h2>
+        <p class="login-subtitle">
+          Biblioteca curada das ofertas que estão escalando no Facebook Ads.
+          Espionagem tática, atualizada diariamente.
+        </p>
+      </div>
+
+      <div class="login-form">
+        <div class="eyebrow">Entrar</div>
+        <label class="input-label">Email</label>
+        <div class="input-wrapper">
+          <input class="input" placeholder="voce@exemplo.com" type="email">
+        </div>
+        <label class="input-label">Senha</label>
+        <div class="input-wrapper">
+          <input class="input" placeholder="••••••••" type="password">
+        </div>
+        <button class="btn btn-primary" style="margin-top: 8px;">Entrar</button>
+        <div style="text-align: center; font-size: 12px; color: var(--text-3); margin-top: 8px;">
+          Primeiro acesso? <span style="color: var(--text); text-decoration: underline; cursor: pointer;">Criar conta</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="footer">
+  Preview gerado em 2026-04-22 · <span class="mono">docs/brandbook-preview.html</span>
+  · Standalone HTML, abre direto no browser
+</footer>
+
+</body>
+</html>

@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { Plus, ChevronRight, Package } from "lucide-react";
-import { listAllOffersAdmin } from "@/lib/queries/offers";
+import { Plus, ChevronRight, Package, Layers, Pencil, Zap, Loader2, Link2 } from "lucide-react";
+import { FromUrlButton } from "./from-url-button";
+import { ListAutoRefresh } from "./list-auto-refresh";
+import { ExtractingRowStatus } from "./extracting-row-status";
+import { listOffersPaginated } from "@/lib/queries/offers-list";
 import {
   LANGUAGE_LABELS,
   NICHE_LABELS,
@@ -9,12 +12,22 @@ import {
 } from "@/lib/types";
 import { OfferPill } from "@/components/offers/offer-pill";
 import { formatDateShort, formatNumber } from "@/lib/utils";
+import { requireAdmin } from "@/lib/auth/require-admin";
+import { isOfferExtracting } from "@/lib/offer-status";
 
 export default async function AdminOffersPage() {
-  const offers = await listAllOffersAdmin();
+  await requireAdmin();
+  // Paginação: 150 ofertas por página, ordenadas por created_at DESC.
+  // Quando passar de 150 no catálogo, adicionar UI de "carregar mais".
+  const { offers, total, has_more } = await listOffersPaginated({
+    limit: 150,
+    adminAll: true,
+  });
+  const hasExtracting = offers.some(isOfferExtracting);
 
   return (
     <div className="relative z-10 px-4 md:px-8 py-6 md:py-8 flex flex-col gap-6 max-w-[1680px] mx-auto">
+      <ListAutoRefresh hasExtracting={hasExtracting} />
       <header className="flex items-center justify-between">
         <div>
           <div className="text-[11px] font-semibold text-text-3 uppercase tracking-[0.14em] mb-1">
@@ -24,23 +37,58 @@ export default async function AdminOffersPage() {
             Ofertas
           </h1>
           <p className="text-[13px] text-text-2 mt-1">
-            {offers.length} {offers.length === 1 ? "oferta cadastrada" : "ofertas cadastradas"}
+            {has_more
+              ? `Mostrando ${offers.length} de ${total} ofertas (mais recentes primeiro)`
+              : `${total} ${total === 1 ? "oferta cadastrada" : "ofertas cadastradas"}`}
           </p>
         </div>
-        <Link
-          href="/admin/offers/new"
-          className="
-            inline-flex items-center gap-2 px-4 py-2.5 rounded-full
-            bg-[var(--accent)] text-black font-medium text-[13px]
-            shadow-[0_4px_20px_var(--accent-glow),inset_0_1px_0_rgba(255,255,255,0.4)]
-            transition-[transform,box-shadow] duration-200 ease-[var(--ease-spring)]
-            hover:scale-[1.02] hover:-translate-y-[1px]
-            active:scale-[0.97]
-          "
-        >
-          <Plus size={15} strokeWidth={2} />
-          Nova oferta
-        </Link>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <FromUrlButton />
+          <Link
+            href="/admin/offers/bulk-ad-library"
+            className="
+              inline-flex items-center gap-2 px-4 py-2.5 rounded-full
+              border border-[var(--border-default)] text-text font-medium text-[13px]
+              hover:bg-[var(--bg-glass)] hover:border-[var(--border-strong)]
+              transition-[transform,background,border-color] duration-200 ease-[var(--ease-spring)]
+              hover:scale-[1.02]
+              active:scale-[0.97]
+            "
+            title="Cola múltiplas URLs do Ad Library e processa todas com progresso ao vivo"
+          >
+            <Link2 size={15} strokeWidth={1.8} />
+            Bulk · Ad Library
+          </Link>
+          <Link
+            href="/admin/offers/batch"
+            className="
+              inline-flex items-center gap-2 px-4 py-2.5 rounded-full
+              border border-[var(--border-default)] text-text font-medium text-[13px]
+              hover:bg-[var(--bg-glass)] hover:border-[var(--border-strong)]
+              transition-[transform,background,border-color] duration-200 ease-[var(--ease-spring)]
+              hover:scale-[1.02]
+              active:scale-[0.97]
+            "
+            title="Sobe múltiplos arquivos mp4 de uma vez"
+          >
+            <Layers size={15} strokeWidth={1.8} />
+            Bulk · MP4s
+          </Link>
+          <Link
+            href="/admin/offers/new"
+            className="
+              inline-flex items-center gap-2 px-4 py-2.5 rounded-full
+              border border-[var(--border-default)] text-text font-medium text-[13px]
+              hover:bg-[var(--bg-glass)] hover:border-[var(--border-strong)]
+              transition-[transform,background,border-color] duration-200 ease-[var(--ease-spring)]
+              hover:scale-[1.02]
+              active:scale-[0.97]
+            "
+          >
+            <Plus size={15} strokeWidth={1.8} />
+            Nova oferta
+          </Link>
+        </div>
       </header>
 
       {offers.length === 0 ? (
@@ -73,6 +121,7 @@ export default async function AdminOffersPage() {
             <tbody>
               {offers.map((offer) => {
                 const lang = LANGUAGE_LABELS[offer.language];
+                const isExtracting = isOfferExtracting(offer);
                 const statusVariant =
                   offer.status === "active"
                     ? "success"
@@ -82,20 +131,25 @@ export default async function AdminOffersPage() {
                 return (
                   <tr
                     key={offer.id}
-                    className="
+                    className={`
                       border-t border-[var(--border-hairline)]
                       text-[13px]
                       hover:bg-[var(--bg-elevated)]
                       transition-colors duration-150
-                    "
+                      ${isExtracting ? "row-extracting" : ""}
+                    `}
                   >
                     <td className="px-5 py-3">
-                      <Link
-                        href={`/app/${offer.slug}`}
-                        className="font-medium text-text hover:underline"
-                      >
-                        {offer.title}
-                      </Link>
+                      {isExtracting ? (
+                        <ExtractingRowStatus offerId={offer.id} />
+                      ) : (
+                        <Link
+                          href={`/app/${offer.slug}`}
+                          className="font-medium text-text hover:underline"
+                        >
+                          {offer.title}
+                        </Link>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-text-2">
                       {NICHE_LABELS[offer.niche]}
@@ -122,17 +176,33 @@ export default async function AdminOffersPage() {
                       {offer.launched_at ? formatDateShort(offer.launched_at) : "—"}
                     </td>
                     <td className="px-5 py-3">
-                      <Link
-                        href={`/app/${offer.slug}`}
-                        className="
-                          grid place-items-center w-7 h-7 rounded-full
-                          text-text-3 hover:text-text hover:bg-[var(--bg-glass)]
-                          transition-colors
-                        "
-                        aria-label="Abrir oferta"
-                      >
-                        <ChevronRight size={14} strokeWidth={1.8} />
-                      </Link>
+                      <div className="flex items-center gap-1 justify-end">
+                        <Link
+                          href={`/admin/offers/${offer.id}/edit`}
+                          className="
+                            inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full
+                            text-[11px] font-medium text-text-2
+                            hover:text-text hover:bg-[var(--bg-glass)]
+                            transition-colors
+                          "
+                          aria-label="Editar oferta"
+                        >
+                          <Pencil size={11} strokeWidth={1.8} />
+                          Editar
+                        </Link>
+                        <Link
+                          href={`/app/${offer.slug}`}
+                          target="_blank"
+                          className="
+                            grid place-items-center w-7 h-7 rounded-full
+                            text-text-3 hover:text-text hover:bg-[var(--bg-glass)]
+                            transition-colors
+                          "
+                          aria-label="Abrir oferta em nova aba"
+                        >
+                          <ChevronRight size={14} strokeWidth={1.8} />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );

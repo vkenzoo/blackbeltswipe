@@ -7,9 +7,12 @@ import type { Offer } from "@/lib/types";
  */
 export async function listOffers(): Promise<Offer[]> {
   const supabase = await createClient();
+  // Ordena por scale_score DESC (primário) + ad_count DESC (fallback pra
+  // ofertas ainda sem score calculado). Migration spy_engine já rodou.
   const { data, error } = await supabase
     .from("offers")
     .select("*")
+    .order("scale_score", { ascending: false, nullsFirst: false })
     .order("ad_count", { ascending: false })
     .returns<Offer[]>();
 

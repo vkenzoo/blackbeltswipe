@@ -93,11 +93,15 @@ export interface Database {
           title: string | null;
           screenshot_url: string | null;
           fetched_at: string | null;
+          visible: boolean;
+          display_order: number;
           created_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["pages"]["Row"], "id" | "created_at"> & {
+        Insert: Omit<Database["public"]["Tables"]["pages"]["Row"], "id" | "created_at" | "visible" | "display_order"> & {
           id?: string;
           created_at?: string;
+          visible?: boolean;
+          display_order?: number;
         };
         Update: Partial<Database["public"]["Tables"]["pages"]["Row"]>;
       };
@@ -110,10 +114,19 @@ export interface Database {
           thumbnail_url: string | null;
           duration_seconds: number | null;
           captured_at: string;
+          visible: boolean;
+          display_order: number;
+          caption: string | null;
+          published_at: string | null;
+          transcript_text: string | null;
+          transcript_preview: string | null;
+          transcribed_at: string | null;
         };
-        Insert: Omit<Database["public"]["Tables"]["creatives"]["Row"], "id" | "captured_at"> & {
+        Insert: Omit<Database["public"]["Tables"]["creatives"]["Row"], "id" | "captured_at" | "visible" | "display_order"> & {
           id?: string;
           captured_at?: string;
+          visible?: boolean;
+          display_order?: number;
         };
         Update: Partial<Database["public"]["Tables"]["creatives"]["Row"]>;
       };

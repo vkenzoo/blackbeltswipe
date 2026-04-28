@@ -1,19 +1,7 @@
-<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bbs-grad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#F5F5F7"/>
-      <stop offset="100%" stop-color="#868686"/>
-    </linearGradient>
-  </defs>
-  <rect width="32" height="32" rx="7" fill="#000"/>
-  <rect x="2" y="2" width="28" height="28" rx="6" fill="url(#bbs-grad)"/>
-  <text
-    x="16"
-    y="22"
-    text-anchor="middle"
-    font-family="'Inter Tight', -apple-system, system-ui, sans-serif"
-    font-weight="700"
-    font-size="18"
-    fill="#000"
-  >B</text>
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M0 23.7155C0 10.6179 10.6178 0 23.7154 0H75.3759C88.4736 0 99.0914 10.6179 99.0914 23.7155V75.376C99.0914 88.4737 88.4736 99.0915 75.3759 99.0915H23.7154C10.6178 99.0915 0 88.4737 0 75.376V23.7155Z" fill="black"/>
+  <path d="M82.1465 30.2057V46.1099H68.937L58.9061 30.2057H82.1465Z" fill="white"/>
+  <path d="M14.7344 30.2058V46.1101L33.4417 47.034L38.5797 34.9573L35.544 30.2058H14.7344Z" fill="white"/>
+  <path d="M67.0884 74.2228L78.7031 67.0296L55.8036 30.2056H39.0415L67.0884 74.2228Z" fill="white"/>
+  <path d="M38.862 78.0018L26.5684 69.6035L40.2949 37.531L49.6658 51.7855L38.862 78.0018Z" fill="white"/>
 </svg>

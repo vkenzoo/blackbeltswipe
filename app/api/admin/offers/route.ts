@@ -60,6 +60,12 @@ export async function POST(request: Request) {
     thumb_gradient,
     flags: body.flags ?? [],
     created_by: user.id,
+    // Campos de VSL (opcional — admin pode criar offer sem vídeo)
+    vsl_storage_path: body.vsl_storage_path ?? null,
+    vsl_thumbnail_path: body.vsl_thumbnail_path ?? null,
+    vsl_duration_seconds: body.vsl_duration_seconds ?? null,
+    vsl_size_bytes: body.vsl_size_bytes ?? null,
+    vsl_uploaded_at: body.vsl_uploaded_at ?? null,
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,5 +81,59 @@ export async function POST(request: Request) {
     );
   }
 
+  // Se veio array `pages: [{url, type?}]`, insere em `pages` + auto-enqueue
+  // screenshot_page jobs pro worker processar
+  if (Array.isArray(body.pages) && body.pages.length > 0 && data?.id) {
+    const pageRows = body.pages
+      .filter((p: { url?: string }) => typeof p.url === "string" && p.url.trim())
+      .map((p: { url: string; type?: string }) => ({
+        offer_id: data.id,
+        url: p.url.trim(),
+        type: detectPageType(p.url, p.type),
+        fetched_at: null,
+      }));
+
+    if (pageRows.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: insertedPages, error: pagesErr } = await (
+        supabase.from("pages") as any
+      )
+        .insert(pageRows)
+        .select("id");
+      if (pagesErr) {
+        console.warn(`offer ${data.id} criada, falha ao inserir pages:`, pagesErr.message);
+      } else if (insertedPages?.length > 0) {
+        // Auto-enqueue screenshot pra cada page nova
+        const jobRows = insertedPages.map((p: { id: string }) => ({
+          kind: "screenshot_page",
+          payload: { page_id: p.id },
+          status: "pending",
+        }));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("jobs") as any).insert(jobRows);
+      }
+    }
+  }
+
   return NextResponse.json({ ok: true, offer: data }, { status: 201 });
+}
+
+/**
+ * Heurística de tipo da página pela URL.
+ * - facebook.com/ads/library → ad_library
+ * - facebook.com/{page} (sem /ads/) → fb_page
+ * - resto → main_site
+ */
+function detectPageType(url: string, explicit?: string): string {
+  if (explicit && ["ad_library", "fb_page", "main_site", "checkout"].includes(explicit)) {
+    return explicit;
+  }
+  const lower = url.toLowerCase();
+  if (lower.includes("facebook.com/ads/library") || lower.includes("/ads/library")) {
+    return "ad_library";
+  }
+  if (lower.includes("facebook.com/") || lower.includes("fb.com/")) {
+    return "fb_page";
+  }
+  return "main_site";
 }

@@ -1,23 +1,18 @@
 import type { Metadata } from "next";
-import { Inter, Inter_Tight } from "next/font/google";
+import { Onest } from "next/font/google";
 import "./globals.css";
+import { ToastProvider } from "@/components/ui/toaster";
 
-const inter = Inter({
-  variable: "--font-inter",
+const onest = Onest({
+  variable: "--font-onest",
   subsets: ["latin"],
-  display: "swap",
-});
-
-const interTight = Inter_Tight({
-  variable: "--font-inter-tight",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Black Belt Swipe",
-  description: "Biblioteca curada de ofertas escaladas de Facebook Ads",
+  title: "BlackBelt Swipe",
+  description: "Veja tudo que tentaram te esconder.",
 };
 
 export default function RootLayout({
@@ -26,8 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${interTight.variable}`}>
-      <body className="min-h-screen">{children}</body>
+    <html lang="pt-BR" className={onest.variable}>
+      <body className="min-h-screen">
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }

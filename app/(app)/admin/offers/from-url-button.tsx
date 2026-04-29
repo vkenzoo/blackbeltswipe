@@ -108,41 +108,54 @@ export function FromUrlButton() {
       const jobId = enqueueData.job_id as string;
       const offerId = enqueueData.offer_id as string;
 
-      // 2. Poll job status a cada 3s até done ou error
+      // 2. Poll: o job inicial pode terminar fast (bulk_ad_library_prep ~9s)
+      //    mas só prepara dados — enfileira jobs downstream (enrich_from_url
+      //    + extract_vsl + transcribe). Pra mostrar estado real, polla a
+      //    OFERTA até title mudar de "Extraindo..." (sinal que pipeline
+      //    inteiro completou) OU até o job inicial dar erro permanente.
+      const POLL_INTERVAL_MS = 3000;
+      const MAX_POLL_MS = 5 * 60 * 1000; // 5min hard timeout
+      const t0 = Date.now();
+
       // eslint-disable-next-line no-constant-condition
       while (true) {
-        await new Promise((r) => setTimeout(r, 3000));
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+
+        // 2a. Checa job inicial só pra capturar erro permanente
         const statusRes = await fetch(`/api/admin/jobs/${jobId}`, { cache: "no-store" });
-        if (!statusRes.ok) continue;
-        const job = (await statusRes.json()) as JobStatus;
-        if (job.status === "done") {
-          // Busca dados finais da oferta
-          const offerRes = await fetch(`/api/admin/offers/${offerId}`, { cache: "no-store" });
-          if (offerRes.ok) {
-            const d = await offerRes.json();
-            setResult({
-              ok: true,
-              id: offerId,
-              slug: d.offer.slug,
-              title: d.offer.title,
-              niche: d.offer.niche,
-              vslDownloaded: !!d.offer.vsl_storage_path,
-              vslTranscribed: !!d.offer.transcript_text,
-              creativesCreated: d.creatives?.length ?? 0,
-              landingPagesCreated: d.pages?.filter((p: { type: string }) => p.type === "main_site").length ?? 0,
-              checkoutPagesCreated: d.pages?.filter((p: { type: string }) => p.type === "checkout").length ?? 0,
-              adCount: d.offer.ad_count,
-            });
-          } else {
-            setResult({ ok: true, id: offerId });
+        if (statusRes.ok) {
+          const job = (await statusRes.json()) as JobStatus;
+          if (job.status === "error") {
+            setResult({ ok: false, error: job.error ?? "worker_error" });
+            break;
           }
-          break;
         }
-        if (job.status === "error") {
-          setResult({ ok: false, error: job.error ?? "worker_error" });
-          break;
+
+        // 2b. Polla a oferta. Pipeline completo quando title !== placeholder
+        const offerRes = await fetch(`/api/admin/offers/${offerId}`, { cache: "no-store" });
+        if (offerRes.ok) {
+          const d = await offerRes.json();
+          const isStillExtracting = d.offer.title === "Extraindo...";
+          const timedOut = Date.now() - t0 > MAX_POLL_MS;
+
+          // Atualiza estado parcial enquanto roda — usuário vê contadores subindo
+          setResult({
+            ok: true,
+            id: offerId,
+            slug: d.offer.slug,
+            title: d.offer.title,
+            niche: d.offer.niche,
+            vslDownloaded: !!d.offer.vsl_storage_path,
+            vslTranscribed: !!d.offer.transcript_text,
+            creativesCreated: d.creatives?.length ?? 0,
+            landingPagesCreated: d.pages?.filter((p: { type: string }) => p.type === "main_site").length ?? 0,
+            checkoutPagesCreated: d.pages?.filter((p: { type: string }) => p.type === "checkout").length ?? 0,
+            adCount: d.offer.ad_count,
+          });
+
+          // Sai do loop quando enrich completou (title mudou) ou timeout
+          if (!isStillExtracting || timedOut) break;
         }
-        // pending ou running — continua polling
       }
     } catch (err) {
       setResult({

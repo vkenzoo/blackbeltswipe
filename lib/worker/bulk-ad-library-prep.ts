@@ -23,7 +23,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { fetchActiveAdsByPage } from "@/lib/worker/ad-library-api";
+import { fetchActiveAdsByPage, fetchActiveAdsBySearchTerms } from "@/lib/worker/ad-library-api";
 import { adLibraryPageUrl } from "@/lib/worker/ad-library-domain-search";
 import { isLandingCandidateUrl, isCheckoutUrl } from "@/lib/security";
 
@@ -67,13 +67,27 @@ export function extractAdLibraryPageId(urlStr: string): string | null {
 
 /**
  * Multi-country default usado quando URL do Ad Library tem `country=ALL`
- * ou quando admin cola URL sem indicar país. Cobre BR + Portugal + anglosfera
- * + LATAM. Custo extra: nenhum (Meta API aceita array de countries em 1 call).
+ * ou quando admin cola URL sem indicar país.
+ *
+ * Lista ampla cobrindo ~todos mercados ocidentais relevantes — inclui
+ * países que historicamente perdíamos (DE, FR, IT, NL, etc). Custo extra:
+ * zero (Meta API aceita o array inteiro em 1 call).
+ *
+ * Por que não "world":  Meta API aceita até ~50 country codes mas a
+ * matemática de ad_reached_countries é OR (ad reached qualquer um deles),
+ * então a lista só precisa cobrir os países onde esperamos rodadas reais.
  */
 const ALL_COUNTRIES_DEFAULT = [
-  "BR", "PT",                          // Português
-  "US", "GB", "CA", "AU",              // Inglês
-  "ES", "MX", "AR", "CO", "CL",        // Espanhol
+  // Português
+  "BR", "PT",
+  // Anglosfera
+  "US", "GB", "CA", "AU", "IE", "NZ",
+  // Espanhol
+  "ES", "MX", "AR", "CO", "CL", "PE", "VE", "UY", "PY", "BO", "EC",
+  // Europa Ocidental (não-anglo)
+  "FR", "DE", "IT", "NL", "BE", "CH", "AT", "SE", "NO", "DK", "FI",
+  // Outros mercados grandes
+  "JP", "KR", "IN", "ID", "PH", "TH", "MY", "SG", "TR", "ZA", "AE", "SA",
 ];
 
 /**
@@ -140,9 +154,56 @@ export async function runBulkAdLibraryPrep(
     metaPageId,
     countries,
     undefined,
-    5, // só 5 pra economizar — só precisamos de 1 com link
+    25, // pega até 25 pra ter chance maior de achar 1 com landing válida
     { caller_handler: "bulk_ad_library_prep", offer_id: opts.offerId }
   );
+
+  // 3b. Fallback: search_page_ids estrito perde ads atribuídos a sub-pages
+  //     do mesmo advertiser. Se retornou < 5 ads, retenta via search_terms
+  //     com o page_name (mais permissivo, agrega ads de páginas relacionadas).
+  //     Merge resultados por ad.id pra evitar duplicação.
+  if (
+    !result.blocked &&
+    result.ads &&
+    result.ads.length < 5 &&
+    result.ads.length > 0
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const firstAd = result.ads[0] as any;
+    const pageName: string | undefined =
+      firstAd.page_name ??
+      firstAd.snapshot?.page_name ??
+      firstAd.snapshot?.byline;
+    if (pageName) {
+      const fallback = await fetchActiveAdsBySearchTerms(
+        pageName,
+        countries,
+        undefined,
+        50,
+        {
+          caller_handler: "bulk_ad_library_prep_fallback",
+          offer_id: opts.offerId,
+        }
+      );
+      if (!fallback.blocked && fallback.ads && fallback.ads.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const seen = new Set((result.ads as any[]).map((a) => a.id));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        for (const ad of fallback.ads as any[]) {
+          // Filtra: só ads desse mesmo page_id (evita pegar advertiser homônimo)
+          if (ad.page_id === metaPageId && !seen.has(ad.id)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (result.ads as any[]).push(ad);
+            seen.add(ad.id);
+          }
+        }
+        result.count = result.ads.length;
+        console.log(
+          `[bulk_ad_library_prep] fallback search_terms="${pageName.slice(0, 30)}" → +${result.ads.length - 1} ads (total=${result.ads.length})`
+        );
+      }
+    }
+  }
 
   if (result.blocked || !result.ads || result.ads.length === 0) {
     // Sem ads ativos (conta pausou tudo) — enfileira enrich da URL original

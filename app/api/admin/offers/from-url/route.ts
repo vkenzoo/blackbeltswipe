@@ -125,12 +125,27 @@ export async function POST(request: Request) {
   );
   const adLibraryPageId = extractAdLibraryPageId(body.url.trim());
 
+  // Parse country da URL: Ad Library tem &country=BR ou &country=ALL.
+  // ALL → handler usa multi-país default. País único → array de 1.
+  let countries: string[] | undefined;
+  if (adLibraryPageId) {
+    try {
+      const c = new URL(body.url.trim()).searchParams.get("country");
+      countries =
+        !c || c.toUpperCase() === "ALL"
+          ? undefined // handler usa multi-country default
+          : [c.toUpperCase()];
+    } catch {
+      countries = undefined;
+    }
+  }
+
   const jobPayload: Record<string, unknown> = adLibraryPageId
     ? {
         url: body.url.trim(),
         offer_id: stub.id,
         source: "from_url_ad_library",
-        country: "BR",
+        countries, // array (multi-país) ou undefined (handler usa default)
         created_by: user.id,
       }
     : {

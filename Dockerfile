@@ -1,9 +1,9 @@
-# Dockerfile.worker — imagem do worker BBS pro Coolify.
+# Dockerfile — imagem do worker BBS pro Coolify.
 #
 # O worker é um processo long-running (loop polling jobs + sweeps periódicos
 # + Playwright headless + ffmpeg). NÃO roda no Vercel (serverless).
 #
-# Build:   docker build -f Dockerfile.worker -t bbs-worker .
+# Build:   docker build -t bbs-worker .
 # Run:     docker run --env-file .env.local bbs-worker
 #
 # Coolify: subir esse Dockerfile, setar env vars no painel, expor 0 portas

@@ -22,6 +22,7 @@ import { handleComputeScaleScore } from "./handlers/compute-scale-score";
 import { handleAiAuthoring } from "./handlers/ai-authoring";
 import { handleBulkAdLibraryPrep } from "./handlers/bulk-ad-library-prep";
 import { handleBackfillAdCount } from "./handlers/backfill-ad-count";
+import { handleSyncCreatives } from "./handlers/sync-creatives";
 import {
   screenshotPagesSweep,
   transcribeCreativesSweep,
@@ -60,6 +61,7 @@ const JOB_TIMEOUT_MS: Record<string, number> = {
   ai_authoring: 30_000,        // 30s — GPT-4o-mini vision
   bulk_ad_library_prep: 30_000, // 30s — só Meta API + insert
   backfill_ad_count: 120_000,  // 120s — pode paginar muitas ads antigas
+  sync_creatives: 600_000,     // 10min — Playwright em até 30 ads (vídeos pesados)
 };
 
 // Concorrência por tipo (quantos desse tipo podem rodar em paralelo)
@@ -76,6 +78,7 @@ const CONCURRENCY: Record<string, number> = {
   ai_authoring: 2,             // 2 calls concurrent pro OpenAI
   bulk_ad_library_prep: 5,     // só Meta API leve, alta concorrência
   backfill_ad_count: 2,        // 2 em paralelo — pesado, cuidado com rate limit
+  sync_creatives: 1,           // 1 por vez — usa browser pesadamente em N ads
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,6 +97,7 @@ const HANDLERS: Record<string, (supa: Supa, payload: JobRow["payload"]) => Promi
   ai_authoring: handleAiAuthoring,
   bulk_ad_library_prep: handleBulkAdLibraryPrep,
   backfill_ad_count: handleBackfillAdCount,
+  sync_creatives: handleSyncCreatives,
 };
 
 // Contadores de jobs rodando por kind (pra respeitar CONCURRENCY)

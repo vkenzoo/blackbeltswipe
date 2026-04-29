@@ -171,11 +171,27 @@ export async function POST(request: Request) {
     //    - Outra URL qualquer → enrich_from_url direto (legado, concurrency 1)
     const isAdLibrary = extractAdLibraryPageId(url) !== null;
     const jobKind = isAdLibrary ? "bulk_ad_library_prep" : "enrich_from_url";
+
+    // Parse country da URL: Ad Library tem &country=BR ou &country=ALL.
+    // ALL → multi-país (handler usa default global). País único → array de 1.
+    let countries: string[] | undefined;
+    if (isAdLibrary) {
+      try {
+        const c = new URL(url).searchParams.get("country");
+        countries =
+          !c || c.toUpperCase() === "ALL"
+            ? undefined // handler usa multi-country default
+            : [c.toUpperCase()];
+      } catch {
+        countries = undefined;
+      }
+    }
+
     const jobPayload = isAdLibrary
       ? {
           offer_id: stub.id,
           url,
-          country: "BR",
+          countries, // array (multi-país) ou undefined (handler usa default)
           created_by: user.id,
           source: "bulk_ad_library",
         }

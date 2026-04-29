@@ -14,10 +14,11 @@ type Supa = SupabaseClient<Database>;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function handleBulkAdLibraryPrep(supa: Supa, payload: any): Promise<void> {
-  const { offer_id, url, country } = payload as {
+  const { offer_id, url, countries, country } = payload as {
     offer_id: string;
     url: string;
-    country?: string;
+    countries?: string[];
+    country?: string; // compat com payloads antigos
   };
   if (!offer_id) throw new Error("missing_offer_id");
   if (!url) throw new Error("missing_url");
@@ -25,7 +26,8 @@ export async function handleBulkAdLibraryPrep(supa: Supa, payload: any): Promise
   const res = await runBulkAdLibraryPrep(supa, {
     offerId: offer_id,
     originalUrl: url,
-    country: country ?? "BR",
+    countries,
+    country,
   });
 
   if (res.ok) {

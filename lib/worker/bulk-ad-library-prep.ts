@@ -66,6 +66,17 @@ export function extractAdLibraryPageId(urlStr: string): string | null {
 }
 
 /**
+ * Multi-country default usado quando URL do Ad Library tem `country=ALL`
+ * ou quando admin cola URL sem indicar país. Cobre BR + Portugal + anglosfera
+ * + LATAM. Custo extra: nenhum (Meta API aceita array de countries em 1 call).
+ */
+const ALL_COUNTRIES_DEFAULT = [
+  "BR", "PT",                          // Português
+  "US", "GB", "CA", "AU",              // Inglês
+  "ES", "MX", "AR", "CO", "CL",        // Espanhol
+];
+
+/**
  * Core do handler.
  */
 export async function runBulkAdLibraryPrep(
@@ -73,10 +84,19 @@ export async function runBulkAdLibraryPrep(
   opts: {
     offerId: string;
     originalUrl: string;
+    /** Lista de países pra Meta API. Default: multi-país global. */
+    countries?: string[];
+    /** Compat: payloads antigos com country: string single. */
     country?: string;
   }
 ): Promise<BulkPrepResult> {
-  const country = opts.country ?? "BR";
+  // Resolve countries: prefere array novo, senão converte single, senão multi default
+  const countries: string[] =
+    opts.countries && opts.countries.length > 0
+      ? opts.countries
+      : opts.country && opts.country !== "ALL"
+        ? [opts.country]
+        : ALL_COUNTRIES_DEFAULT;
 
   // 1. Extrai page_id da URL
   const metaPageId = extractAdLibraryPageId(opts.originalUrl);
@@ -105,7 +125,7 @@ export async function runBulkAdLibraryPrep(
     await (supa.from("pages") as any).insert({
       offer_id: opts.offerId,
       type: "ad_library",
-      url: adLibraryPageUrl(metaPageId, [country]),
+      url: adLibraryPageUrl(metaPageId, countries),
       title: `Ad Library · page ${metaPageId}`,
       meta_page_id: metaPageId,
       visible: true,
@@ -115,10 +135,10 @@ export async function runBulkAdLibraryPrep(
     });
   }
 
-  // 3. Meta API pra pegar ads ativos da page
+  // 3. Meta API pra pegar ads ativos da page (multi-country em 1 call)
   const result = await fetchActiveAdsByPage(
     metaPageId,
-    [country],
+    countries,
     undefined,
     5, // só 5 pra economizar — só precisamos de 1 com link
     { caller_handler: "bulk_ad_library_prep", offer_id: opts.offerId }

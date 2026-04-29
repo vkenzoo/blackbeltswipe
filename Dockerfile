@@ -72,7 +72,7 @@ VOLUME ["/tmp"]
 # Healthcheck: bun --eval verifica se SUPABASE_URL responde + worker_heartbeats
 # row recente (<2min). Coolify reinicia container se falhar 3 vezes seguidas.
 HEALTHCHECK --interval=60s --timeout=20s --start-period=120s --retries=3 \
-  CMD bun --eval "fetch(process.env.NEXT_PUBLIC_SUPABASE_URL+'/rest/v1/worker_heartbeats?select=last_heartbeat_at&order=last_heartbeat_at.desc&limit=1',{headers:{apikey:process.env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+process.env.SUPABASE_SERVICE_ROLE_KEY}}).then(r=>r.json()).then(d=>{const t=new Date(d[0]?.last_heartbeat_at).getTime();if(!t||Date.now()-t>120000)process.exit(1)}).catch(()=>process.exit(1))" || exit 1
+  CMD bun --eval "fetch(process.env.NEXT_PUBLIC_SUPABASE_URL+'/rest/v1/worker_heartbeats?select=last_beat_at&order=last_beat_at.desc&limit=1',{headers:{apikey:process.env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+process.env.SUPABASE_SERVICE_ROLE_KEY}}).then(r=>r.json()).then(d=>{const t=new Date(d[0]?.last_beat_at).getTime();if(!t||Date.now()-t>120000)process.exit(1)}).catch(()=>process.exit(1))" || exit 1
 
 # Entry: NÃO usa --env-file (Coolify injeta env vars direto)
 CMD ["bun", "run", "worker/index.ts"]

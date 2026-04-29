@@ -280,31 +280,23 @@ export async function runBulkAdLibraryPrep(
     }
   }
 
-  // 6. Enfileira enrich APENAS se achou landing válida (não checkout).
-  //    Se todos os ads vão direto pro checkout, oferta fica com:
-  //    - ad_library page (verified)
-  //    - checkout page (se tinha)
-  //    - creatives do Ad Library (via sync posterior)
-  //    - Admin vê "Sem VSL" e decide se vale a oferta
+  // 6. Enfileira enrich:
+  //    - Se achou landing válida via fields da API → enrich nessa landing direta
+  //    - Senão → enrich na URL original do Ad Library (Playwright vai abrir
+  //      o snapshot, scrape os ads e descobrir landings/VSLs por DOM)
+  //
+  //    Por que SEMPRE enfileirar enrich (mesmo sem landing):
+  //    Meta API NÃO retorna link_url nos fields públicos. URL de destino só
+  //    existe no HTML renderizado pelo ad_snapshot_url. Playwright (via
+  //    enrich_from_url) scrapeia esse HTML e descobre landings reais — esse
+  //    caminho já funciona pra URLs keyword (Vivendo de iPhone, 56 landings).
   if (landingUrl) {
     await enqueueEnrichFallback(supa, opts.offerId, landingUrl);
   } else {
     console.log(
-      `[bulk_ad_library_prep] offer=${opts.offerId.slice(0, 8)} SEM landing válida (todos ads vão pra checkout/redirect) — pulando enrich`
+      `[bulk_ad_library_prep] offer=${opts.offerId.slice(0, 8)} SEM landing nos fields da API — fallback Playwright na URL Ad Library`
     );
-    // Atualiza title da oferta pra sinalizar ao admin que o pipeline terminou
-    // sem VSL. Evita oferta ficar com title genérico "Extraindo..." pra sempre.
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supa.from("offers") as any)
-        .update({
-          title: "Ad Library · sem VSL (só checkout)",
-        })
-        .eq("id", opts.offerId)
-        .eq("title", "Extraindo..."); // só atualiza se ainda é placeholder
-    } catch {
-      /* silent */
-    }
+    await enqueueEnrichFallback(supa, opts.offerId, opts.originalUrl);
   }
 
   return {

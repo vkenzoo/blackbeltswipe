@@ -56,7 +56,7 @@ const JOB_TIMEOUT_MS: Record<string, number> = {
   extract_vsl: 1_800_000,      // 30min — HLS re-encode
   enrich_offer: 1_800_000,     // 30min
   enrich_from_url: 1_800_000,  // 30min
-  refresh_ad_count: 60_000,    // 60s — só abre página + lê texto
+  refresh_ad_count: 120_000,   // 120s — multi-page + Layer 3 domain fallback podem ir além de 60s
   compute_scale_score: 15_000, // 15s — só DB reads + pure fn
   ai_authoring: 30_000,        // 30s — GPT-4o-mini vision
   bulk_ad_library_prep: 30_000, // 30s — só Meta API + insert

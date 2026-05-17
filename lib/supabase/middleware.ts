@@ -45,6 +45,19 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Logado com must_change_password=true → força tela de trocar senha.
+  // Hub provisiona com essa flag quando cria o user.
+  const mustChangePwd = user?.user_metadata?.must_change_password === true;
+  const changePwdExempt =
+    path.startsWith("/change-password") ||
+    path.startsWith("/api") ||
+    path.startsWith("/auth");
+  if (user && mustChangePwd && !changePwdExempt) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/change-password";
+    return NextResponse.redirect(url);
+  }
+
   // Rotas de auth (login) — se já logado, manda pro app
   if (path === "/login" && user) {
     const url = request.nextUrl.clone();

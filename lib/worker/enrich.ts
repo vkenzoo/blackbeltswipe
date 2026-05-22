@@ -459,10 +459,21 @@ export async function enrichUrl(
       `[enrich] ${url}: graphql=${graphqlHits} ads=${graphqlAds.length} domV=${domVideos.length} domI=${domImages.length} interceptedV=${interceptedVideos.length} interceptedI=${interceptedImages.length} total=${candidates.length}`
     );
 
-    // ── Create creatives (max 5) + thumb pra video ──
+    // ── Create creatives (max 5 por enrich, respeitando cap global de 30) ──
+    const { getCreativeCapStatus, MAX_CREATIVES_PER_OFFER } = await import(
+      "./creative-cap"
+    );
+    const capStatus = await getCreativeCapStatus(supa, offerId);
+    if (capStatus.atCap) {
+      console.log(
+        `[enrich] offer=${offerId.slice(0, 8)} ATINGIU CAP (${capStatus.current}/${MAX_CREATIVES_PER_OFFER}) — pulando download de criativos`
+      );
+    }
     let creativesCreated = 0;
-    const topCandidates = candidates.slice(0, 5);
+    let slotsLeft = capStatus.remaining;
+    const topCandidates = candidates.slice(0, Math.min(5, slotsLeft));
     for (let i = 0; i < topCandidates.length; i++) {
+      if (slotsLeft <= 0) break;
       const c = topCandidates[i];
       try {
         const buffer = await downloadAsBuffer(c.url);
@@ -501,8 +512,10 @@ export async function enrichUrl(
           }
         }
 
+        // Insert pode falhar com 23505 (unique violation) se asset_url já
+        // existe pra essa oferta (dedup via DB constraint).
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: inserted } = await (supa.from("creatives") as any)
+        const { data: inserted, error: insErr } = await (supa.from("creatives") as any)
           .insert({
             offer_id: offerId,
             kind: c.kind,
@@ -514,7 +527,20 @@ export async function enrichUrl(
           })
           .select("id")
           .single();
+
+        if (insErr) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const code = (insErr as any).code;
+          if (code === "23505") {
+            console.log(
+              `[enrich] creative duplicado (asset_url já existe), skip — ${assetPath.slice(0, 60)}`
+            );
+            continue;
+          }
+          throw insErr;
+        }
         creativesCreated++;
+        slotsLeft--;
 
         // Cria request de transcribe_creative pra videos — admin aprova
         // em /admin/aprovacoes pra realmente gastar Whisper.

@@ -27,9 +27,9 @@ import {
 
 type Supa = SupabaseClient<Database>;
 
-const MAX_VIDEOS_PER_OFFER = 20;
-const MAX_IMAGES_PER_OFFER = 10;
 const MAX_ADS_FROM_API = 80; // margem ampla (precisamos achar 30 mídias de qualquer tipo)
+// Cap único agora vem do creative-cap.ts (MAX_CREATIVES_PER_OFFER = 30)
+// Subtrai criativos já existentes na oferta antes de começar download.
 
 export type SyncResult = {
   skipped: boolean;
@@ -158,6 +158,41 @@ export async function syncCreativesFromApi(
     .maybeSingle();
   let nextOrder = (maxOrder?.display_order ?? -1) + 1;
 
+  // 6.5 Cap check — quantos slots restam até o limite global (30)
+  const { getCreativeCapStatus, MAX_CREATIVES_PER_OFFER } = await import(
+    "./creative-cap"
+  );
+  const capStatus = await getCreativeCapStatus(supa, offerId);
+  if (capStatus.atCap) {
+    console.log(
+      `[sync_creatives] offer=${offerId.slice(0, 8)} ATINGIU CAP (${capStatus.current}/${MAX_CREATIVES_PER_OFFER}) — pulando download`
+    );
+    // Marca stopped pra os existentes que sumiram (continua útil)
+    if (stoppedIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: updErr } = await (supa.from("creatives") as any)
+        .update({ stopped_at: new Date().toISOString() })
+        .in("id", stoppedIds);
+      if (updErr) console.warn("[sync_creatives] stopped update:", updErr.message);
+    }
+    return {
+      api_total: apiAds.length,
+      videos_downloaded: 0,
+      images_downloaded: 0,
+      media_skipped: 0,
+      download_failed: 0,
+      stopped: stoppedIds.length,
+      new_ad_ids: [],
+      errors: [`offer_at_cap_${capStatus.current}_of_${MAX_CREATIVES_PER_OFFER}`],
+      skipped: true,
+      skip_reason: "offer_creatives_at_cap",
+    };
+  }
+  let slotsLeft = capStatus.remaining;
+  console.log(
+    `[sync_creatives] offer=${offerId.slice(0, 8)} cap status: ${capStatus.current}/${MAX_CREATIVES_PER_OFFER} (${slotsLeft} slots livres)`
+  );
+
   // 7. Loop: extrai mídia (video OU imagem) via Playwright
   let videosDownloaded = 0;
   let imagesDownloaded = 0;
@@ -166,9 +201,12 @@ export async function syncCreativesFromApi(
   const newAdIds: string[] = [];
 
   for (const ad of newAds) {
-    const hitVideoCap = videosDownloaded >= MAX_VIDEOS_PER_OFFER;
-    const hitImageCap = imagesDownloaded >= MAX_IMAGES_PER_OFFER;
-    if (hitVideoCap && hitImageCap) break;
+    if (slotsLeft <= 0) {
+      console.log(
+        `[sync_creatives] offer=${offerId.slice(0, 8)} cap atingido durante loop — parando`
+      );
+      break;
+    }
 
     if (!ad.ad_snapshot_url) {
       mediaSkipped++;
@@ -184,12 +222,13 @@ export async function syncCreativesFromApi(
         continue;
       }
 
-      // Decide qual downloadar baseado em caps restantes
+      // Decide qual downloadar baseado em slots restantes (não diferencia
+      // mais video vs image — cap único de 30)
       let result:
         | { ok: true; kind: "video" | "image"; creativeId: string }
         | { ok: false; error: string };
 
-      if (media.videoUrl && !hitVideoCap) {
+      if (media.videoUrl) {
         // eslint-disable-next-line no-await-in-loop
         result = await downloadAndInsertVideo({
           supa,
@@ -199,7 +238,7 @@ export async function syncCreativesFromApi(
           videoUrl: media.videoUrl,
           displayOrder: nextOrder++,
         });
-      } else if (media.imageUrl && !hitImageCap) {
+      } else if (media.imageUrl) {
         // eslint-disable-next-line no-await-in-loop
         result = await downloadAndInsertImage({
           supa,
@@ -210,7 +249,6 @@ export async function syncCreativesFromApi(
           displayOrder: nextOrder++,
         });
       } else {
-        // Cap atingido pra esse tipo, pula
         mediaSkipped++;
         continue;
       }
@@ -219,6 +257,7 @@ export async function syncCreativesFromApi(
         if (result.kind === "video") videosDownloaded++;
         else imagesDownloaded++;
         newAdIds.push(ad.id);
+        slotsLeft--; // consome 1 slot por sucesso
       } else {
         downloadFailed++;
         errors.push(`ad=${ad.id}:${result.error}`);

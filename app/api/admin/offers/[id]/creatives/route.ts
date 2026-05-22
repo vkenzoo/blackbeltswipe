@@ -45,6 +45,37 @@ export async function POST(
     return NextResponse.json({ error: "missing_asset_url" }, { status: 400 });
   }
 
+  // Cap check (max 30 criativos por oferta — política global)
+  const { getCreativeCapStatus, assetUrlExists, MAX_CREATIVES_PER_OFFER } =
+    await import("@/lib/worker/creative-cap");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const capStatus = await getCreativeCapStatus(auth.supabase as any, offerId);
+  if (capStatus.atCap) {
+    return NextResponse.json(
+      {
+        error: "cap_reached",
+        message: `Oferta já tem ${capStatus.current}/${MAX_CREATIVES_PER_OFFER} criativos. Remova algum antes de adicionar.`,
+        current: capStatus.current,
+        max: MAX_CREATIVES_PER_OFFER,
+      },
+      { status: 409 }
+    );
+  }
+
+  // Dedup: se asset_url já existe pra essa oferta, rejeita
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isDup = await assetUrlExists(auth.supabase as any, offerId, body.asset_url);
+  if (isDup) {
+    return NextResponse.json(
+      {
+        error: "duplicate_asset",
+        message: "Esse criativo (asset_url) já existe nessa oferta.",
+        asset_url: body.asset_url,
+      },
+      { status: 409 }
+    );
+  }
+
   // próxima display_order: max atual + 1
   const { data: maxRow } = await auth.supabase
     .from("creatives")
@@ -72,6 +103,16 @@ export async function POST(
     .single();
 
   if (error) {
+    // 23505 = unique violation (race condition entre check + insert)
+    if (error.code === "23505") {
+      return NextResponse.json(
+        {
+          error: "duplicate_asset",
+          message: "Esse criativo já foi inserido (race condition).",
+        },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { error: error.message, code: error.code },
       { status: 400 }

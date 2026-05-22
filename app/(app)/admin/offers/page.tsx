@@ -3,14 +3,13 @@ import { Plus, ChevronRight, Package, Layers, Pencil, Zap, Loader2, Link2 } from
 import { FromUrlButton } from "./from-url-button";
 import { ListAutoRefresh } from "./list-auto-refresh";
 import { ExtractingRowStatus } from "./extracting-row-status";
+import { StatusCell } from "./status-cell";
 import { listOffersPaginated } from "@/lib/queries/offers-list";
 import {
   LANGUAGE_LABELS,
   NICHE_LABELS,
-  STATUS_LABELS,
   STRUCTURE_LABELS,
 } from "@/lib/types";
-import { OfferPill } from "@/components/offers/offer-pill";
 import { formatDateShort, formatNumber } from "@/lib/utils";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { isOfferExtracting } from "@/lib/offer-status";
@@ -122,12 +121,6 @@ export default async function AdminOffersPage() {
               {offers.map((offer) => {
                 const lang = LANGUAGE_LABELS[offer.language];
                 const isExtracting = isOfferExtracting(offer);
-                const statusVariant =
-                  offer.status === "active"
-                    ? "success"
-                    : offer.status === "paused"
-                    ? "error"
-                    : "default";
                 return (
                   <tr
                     key={offer.id}
@@ -161,13 +154,7 @@ export default async function AdminOffersPage() {
                       {lang.flag} {offer.language}
                     </td>
                     <td className="px-5 py-3">
-                      <OfferPill
-                        size="sm"
-                        variant={statusVariant}
-                        dot={offer.status === "active"}
-                      >
-                        {STATUS_LABELS[offer.status]}
-                      </OfferPill>
+                      <StatusCell offerId={offer.id} status={offer.status} />
                     </td>
                     <td className="px-5 py-3 text-right mono font-medium">
                       {formatNumber(offer.ad_count)}

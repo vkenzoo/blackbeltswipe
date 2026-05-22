@@ -33,21 +33,20 @@ export async function handleTranscribeVsl(supa: Supa, payload: any): Promise<voi
     })
     .eq("id", offer_id);
 
-  // Transcript atualizado → re-enfileira ai_authoring pra GPT revisar com
-  // texto fresco. Admin vai ver banner com sugestões novas.
-  // SÓ se feature estiver enabled na config.
+  // Transcript atualizado → cria request de ai_authoring (admin aprova em
+  // /admin/aprovacoes). NÃO enfileira job direto.
   try {
-    const { getAiSuggestConfigResolved } = await import("@/lib/queries/ai-suggest-config");
-    const config = await getAiSuggestConfigResolved();
-    if (config.enabled) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supa.from("jobs") as any).insert({
-        kind: "ai_authoring",
-        payload: { offer_id },
-        status: "pending",
-        priority: 60,
-      });
-    }
+    const { requestAiAction, COST_ESTIMATES } = await import(
+      "@/lib/worker/request-ai-action"
+    );
+    await requestAiAction({
+      supa,
+      actionType: "ai_authoring",
+      offerId: offer_id,
+      payload: { offer_id },
+      costEstimateUsd: COST_ESTIMATES.ai_authoring,
+      context: { source: "transcribe_vsl_handler_followup" },
+    });
   } catch {
     /* silent — não bloqueia fluxo de transcribe */
   }

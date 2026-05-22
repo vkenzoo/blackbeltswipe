@@ -112,23 +112,21 @@ export async function handleExtractVsl(supa: Supa, payload: any): Promise<void> 
           })
           .eq("id", offer_id);
 
-        // Transcript criado — enfileira ai_authoring se feature enabled.
-        // Mesma lógica do handler transcribe-vsl standalone; evita oferta
-        // ficar sem AI draft quando extract+transcribe rolam inline.
+        // Transcript criado — cria request de ai_authoring (admin aprova em
+        // /admin/aprovacoes). Não enfileira job direto pra evitar gasto
+        // OpenAI sem admin saber.
         try {
-          const { getAiSuggestConfigResolved } = await import(
-            "@/lib/queries/ai-suggest-config"
+          const { requestAiAction, COST_ESTIMATES } = await import(
+            "@/lib/worker/request-ai-action"
           );
-          const config = await getAiSuggestConfigResolved();
-          if (config.enabled) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (supa.from("jobs") as any).insert({
-              kind: "ai_authoring",
-              payload: { offer_id },
-              status: "pending",
-              priority: 60,
-            });
-          }
+          await requestAiAction({
+            supa,
+            actionType: "ai_authoring",
+            offerId: offer_id,
+            payload: { offer_id },
+            costEstimateUsd: COST_ESTIMATES.ai_authoring,
+            context: { transcript_preview: tr.text.slice(0, 200) },
+          });
         } catch {
           /* silent */
         }

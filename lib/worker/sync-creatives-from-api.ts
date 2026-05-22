@@ -492,13 +492,28 @@ async function downloadAndInsertVideo(params: {
     };
   }
 
-  // Auto-enqueue transcribe_creative pro novo video
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supa.from("jobs") as any).insert({
-    kind: "transcribe_creative",
-    payload: { creative_id: inserted.id },
-    status: "pending",
-  });
+  // Cria request de transcribe_creative — admin aprova em /admin/aprovacoes
+  // antes de gastar Whisper. Antes enfileirava direto.
+  try {
+    const { requestAiAction, COST_ESTIMATES } = await import(
+      "./request-ai-action"
+    );
+    await requestAiAction({
+      supa,
+      actionType: "transcribe_creative",
+      offerId: params.offerId,
+      targetId: inserted.id as string,
+      payload: { creative_id: inserted.id },
+      costEstimateUsd: COST_ESTIMATES.transcribe_creative,
+      context: {
+        source: "sync_creatives",
+        asset_path: assetPath,
+        caption_preview: ad.ad_creative_bodies?.[0]?.slice(0, 80) ?? null,
+      },
+    });
+  } catch {
+    /* silent */
+  }
 
   return { ok: true, kind: "video", creativeId: inserted.id };
 }

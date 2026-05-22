@@ -182,10 +182,24 @@ export async function screenshotPagesSweep(supa: Supa): Promise<{
 }
 
 /**
- * Busca todos os video creatives sem transcript_text e enfileira
- * transcribe_creative jobs (dedupe por creative_id).
+ * DISABLED — antes enfileirava transcribe_creative AUTO pra cada criativo
+ * sem transcript, gastando Whisper sem admin aprovar. Agora admin solicita
+ * via ai_action_requests + aprova em /admin/aprovacoes.
+ *
+ * Mantido como no-op pra não quebrar a chamada do main loop. Retorna 0/0/0.
+ *
+ * Pra re-habilitar (não recomendado), descomenta o body original abaixo.
  */
-export async function transcribeCreativesSweep(supa: Supa): Promise<{
+export async function transcribeCreativesSweep(_supa: Supa): Promise<{
+  enqueued: number;
+  skipped: number;
+  totalMissing: number;
+}> {
+  return { enqueued: 0, skipped: 0, totalMissing: 0 };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function _transcribeCreativesSweep_DISABLED(supa: Supa): Promise<{
   enqueued: number;
   skipped: number;
   totalMissing: number;

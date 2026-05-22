@@ -13,6 +13,11 @@ import {
   Layers as LayersIcon,
   AlertOctagon,
   HelpCircle,
+  Sparkles,
+  DollarSign,
+  Brain,
+  Mic,
+  Film,
 } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import {
@@ -20,14 +25,25 @@ import {
   type PendingOfferGroup,
   type PendingPage,
 } from "@/lib/queries/pending-approvals";
+import {
+  listPendingAiActions,
+  getPendingAiActionsTotalCost,
+  getAiActionsHistory,
+} from "@/lib/queries/ai-action-requests";
 import { ApprovalActions } from "./approval-actions";
+import { AiActionsApprovals } from "./ai-actions-approvals";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function AprovacoesPage() {
   await requireAdmin();
-  const groups = await listPendingApprovals();
+  const [groups, aiGroups, aiCost, aiHistory] = await Promise.all([
+    listPendingApprovals(),
+    listPendingAiActions(),
+    getPendingAiActionsTotalCost(),
+    getAiActionsHistory(),
+  ]);
 
   const totalPages = groups.reduce((s, g) => s + g.pending_pages.length, 0);
 
@@ -102,7 +118,7 @@ export default async function AprovacoesPage() {
       </div>
 
       {/* Stats cards */}
-      <section className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           icon={<Clock size={13} strokeWidth={1.8} />}
           label="Pages aguardando"
@@ -110,29 +126,65 @@ export default async function AprovacoesPage() {
           tone={totalPages > 10 ? "warning" : totalPages > 0 ? "info" : "default"}
         />
         <StatCard
-          icon={<Package size={13} strokeWidth={1.8} />}
-          label="Ofertas afetadas"
-          value={groups.length.toLocaleString("pt-BR")}
+          icon={<Sparkles size={13} strokeWidth={1.8} />}
+          label="Ações de IA pendentes"
+          value={aiCost.count.toLocaleString("pt-BR")}
+          tone={aiCost.count > 20 ? "warning" : aiCost.count > 0 ? "info" : "default"}
+        />
+        <StatCard
+          icon={<DollarSign size={13} strokeWidth={1.8} />}
+          label="Custo se aprovar tudo"
+          value={`$${aiCost.totalUsd.toFixed(2)}`}
+          tone={aiCost.totalUsd > 5 ? "warning" : "default"}
         />
         <StatCard
           icon={<Layers size={13} strokeWidth={1.8} />}
-          label="Ação recomendada"
-          value={
-            totalPages === 0
-              ? "Tudo em dia"
-              : totalPages > 10
-                ? "Revisar agora"
-                : "Revisar"
-          }
-          tone={
-            totalPages === 0
-              ? "success"
-              : totalPages > 10
-                ? "warning"
-                : "default"
-          }
+          label="Gasto 30d (aprovado)"
+          value={`$${aiHistory.total_spent_usd_30d.toFixed(2)}`}
         />
       </section>
+
+      {/* Bloco AI Actions */}
+      {aiCost.count > 0 && (
+        <section className="flex flex-col gap-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="display text-[20px] font-semibold tracking-[-0.02em] flex items-center gap-2">
+              <Sparkles size={16} strokeWidth={1.8} style={{ color: "#A78BFA" }} />
+              Ações de IA aguardando aprovação
+            </h2>
+            <span className="text-[11px] text-text-3 mono">
+              {aiCost.count} ações · ${aiCost.totalUsd.toFixed(2)} total
+            </span>
+          </div>
+
+          <div
+            className="glass-light rounded-[var(--r-md)] px-4 py-3 flex items-start gap-3"
+            style={{
+              background: "color-mix(in srgb, #8B5CF6 6%, transparent)",
+              border: "1px solid color-mix(in srgb, #8B5CF6 22%, transparent)",
+            }}
+          >
+            <Brain
+              size={15}
+              strokeWidth={1.8}
+              style={{ color: "#A78BFA" }}
+              className="mt-0.5 shrink-0"
+            />
+            <div className="flex flex-col gap-1 text-[12.5px]">
+              <p className="text-text font-medium">
+                Controle de gasto OpenAI ativo
+              </p>
+              <p className="text-text-2 leading-relaxed">
+                Pipelines não chamam Whisper/GPT direto — criam request aqui.
+                Tu aprova ação a ação ou em lote por oferta. Sem aprovar, custo
+                = $0. Histórico fica salvo pra auditoria mesmo após rejeição.
+              </p>
+            </div>
+          </div>
+
+          <AiActionsApprovals groups={aiGroups} />
+        </section>
+      )}
 
       {/* Empty state */}
       {groups.length === 0 ? (

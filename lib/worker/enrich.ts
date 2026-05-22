@@ -516,17 +516,28 @@ export async function enrichUrl(
           .single();
         creativesCreated++;
 
-        // Auto-enqueue transcribe_creative pra videos (fica pronto pra baixar)
+        // Cria request de transcribe_creative pra videos — admin aprova
+        // em /admin/aprovacoes pra realmente gastar Whisper.
         if (c.kind === "video" && inserted?.id) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (supa.from("jobs") as any).insert({
-            kind: "transcribe_creative",
-            payload: { creative_id: inserted.id },
-            status: "pending",
-          });
+          try {
+            const { requestAiAction, COST_ESTIMATES } = await import(
+              "./request-ai-action"
+            );
+            await requestAiAction({
+              supa,
+              actionType: "transcribe_creative",
+              offerId,
+              targetId: inserted.id as string,
+              payload: { creative_id: inserted.id },
+              costEstimateUsd: COST_ESTIMATES.transcribe_creative,
+              context: { source: "enrich", body_preview: c.body?.slice(0, 100) },
+            });
+          } catch {
+            /* silent */
+          }
         }
         console.log(
-          `[enrich] ✅ ${c.kind} ${i + 1}/${topCandidates.length} salvo${thumbPath ? " + thumb" : ""}${c.kind === "video" ? " + transcribe enfileirado" : ""}`
+          `[enrich] ✅ ${c.kind} ${i + 1}/${topCandidates.length} salvo${thumbPath ? " + thumb" : ""}${c.kind === "video" ? " + transcribe REQUEST criado (aguarda aprovação)" : ""}`
         );
       } catch (err) {
         console.warn(`[enrich] ❌ candidate ${i} (${c.kind}) falhou:`, err instanceof Error ? err.message : err);

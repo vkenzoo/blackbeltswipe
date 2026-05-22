@@ -217,45 +217,43 @@ export async function handleEnrichFromUrl(supa: Supa, payload: any): Promise<voi
     console.warn("[enrich_from_url] sync creatives fail:", err);
   }
 
-  // 10. AI authoring — enfileira job pra gerar sugestões de metadata
-  // (structure, traffic, title, summary). Admin revisa via banner na edit page.
-  // SÓ roda se:
-  //   - feature está enabled em ai_suggest_config (admin pode desligar via UI)
-  //   - tem transcript real (sem transcript, GPT não tem matéria prima)
+  // 10. AI authoring — em vez de enfileirar job direto (gasta OpenAI sem
+  //     admin saber), cria request pendente em ai_action_requests. Admin
+  //     aprova em /admin/aprovacoes pra realmente rodar.
   try {
-    const { getAiSuggestConfigResolved } = await import("@/lib/queries/ai-suggest-config");
-    const config = await getAiSuggestConfigResolved();
-    if (!config.enabled) {
-      console.log(
-        `[enrich_from_url] ${uniqueSlug} · ai_authoring pulado (feature desabilitada pelo admin)`
-      );
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: hasTranscript } = await (supa as any)
-        .from("offers")
-        .select("transcript_text")
-        .eq("id", offerId as string)
-        .maybeSingle<{ transcript_text: string | null }>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: hasTranscript } = await (supa as any)
+      .from("offers")
+      .select("transcript_text")
+      .eq("id", offerId as string)
+      .maybeSingle<{ transcript_text: string | null }>();
 
-      if (hasTranscript?.transcript_text && hasTranscript.transcript_text.length > 200) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supa.from("jobs") as any).insert({
-          kind: "ai_authoring",
-          payload: { offer_id: offerId },
-          status: "pending",
-          priority: 60,
-        });
+    if (hasTranscript?.transcript_text && hasTranscript.transcript_text.length > 200) {
+      const { requestAiAction, COST_ESTIMATES } = await import(
+        "@/lib/worker/request-ai-action"
+      );
+      const res = await requestAiAction({
+        supa,
+        actionType: "ai_authoring",
+        offerId: offerId as string,
+        payload: { offer_id: offerId },
+        costEstimateUsd: COST_ESTIMATES.ai_authoring,
+        context: {
+          transcript_preview: hasTranscript.transcript_text.slice(0, 200),
+        },
+      });
+      if (res.ok) {
         console.log(
-          `[enrich_from_url] ${uniqueSlug} · ai_authoring enfileirado (~$0.003)`
-        );
-      } else {
-        console.log(
-          `[enrich_from_url] ${uniqueSlug} · ai_authoring pulado (transcript ausente)`
+          `[enrich_from_url] ${uniqueSlug} · ai_authoring request criado (${res.deduplicated ? "dedup" : "novo"})`
         );
       }
+    } else {
+      console.log(
+        `[enrich_from_url] ${uniqueSlug} · ai_authoring pulado (transcript ausente)`
+      );
     }
   } catch (err) {
-    console.warn("[enrich_from_url] enqueue ai_authoring fail:", err);
+    console.warn("[enrich_from_url] request ai_authoring fail:", err);
   }
 }
 

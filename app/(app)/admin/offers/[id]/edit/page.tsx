@@ -1232,7 +1232,7 @@ export default function EditOfferPage() {
           </div>
         </div>
 
-        {/* Worker actions row */}
+        {/* Worker actions row — VSL only */}
         <div className="mt-5 pt-4 border-t border-[var(--border-hairline)] flex flex-wrap items-center gap-2">
           <span className="text-[10px] text-text-3 uppercase tracking-[0.14em] font-semibold mr-1">
             Workers:
@@ -1244,8 +1244,100 @@ export default function EditOfferPage() {
             running={workerState.extractVsl === "running"}
             onExtract={runExtractVsl}
           />
+        </div>
+      </section>
 
-          {/* Gerar thumb do VSL */}
+      {/* Thumb / Preview section — independente do VSL.
+          Ofertas non_vsl (sales page texto, image-ad) também precisam de thumb;
+          aqui admin sobe imagem manual ou gera a partir da VSL existente. */}
+      <section className="glass rounded-[var(--r-lg)] p-5 md:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-[11px] font-semibold text-text-3 uppercase tracking-[0.14em] mb-0.5">
+              Preview / Thumb
+            </div>
+            <h2 className="display text-[18px] font-semibold tracking-[-0.02em]">
+              {thumbPublicUrl ? "Thumb atual" : "Sem thumb"}
+            </h2>
+          </div>
+          {thumbPublicUrl && (
+            <div className="text-right text-[11px] text-text-3 mono">
+              {o.vsl_thumbnail_path?.endsWith(".jpg") ? "JPEG" :
+               o.vsl_thumbnail_path?.endsWith(".png") ? "PNG" :
+               o.vsl_thumbnail_path?.endsWith(".webp") ? "WEBP" : "—"}
+            </div>
+          )}
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-[1fr_1fr]">
+          {/* Current thumb preview */}
+          <div>
+            <label className="block text-[10px] text-text-3 uppercase tracking-[0.14em] mb-2">
+              Preview atual
+            </label>
+            {thumbPublicUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={thumbPublicUrl}
+                alt="Thumb atual"
+                className="w-full aspect-[16/10] rounded-[var(--r-md)] object-cover bg-black border border-[var(--border-hairline)]"
+              />
+            ) : (
+              <div className="w-full aspect-[16/10] rounded-[var(--r-md)] bg-[var(--bg-elevated)] grid place-items-center text-[12px] text-text-3">
+                Nenhuma thumb ainda
+              </div>
+            )}
+          </div>
+
+          {/* Upload thumb manual */}
+          <div>
+            <label className="block text-[10px] text-text-3 uppercase tracking-[0.14em] mb-2">
+              {thumbPublicUrl ? "Substituir thumb" : "Adicionar thumb"}
+            </label>
+            <label className="
+              w-full flex items-center justify-center gap-2 px-5 py-5
+              border-2 border-dashed border-[var(--border-default)] rounded-[var(--r-md)]
+              text-[13px] text-text-2 hover:text-text hover:border-[var(--border-strong)]
+              hover:bg-[var(--bg-glass)]
+              transition-[background,color,border-color] duration-200
+              cursor-pointer
+            ">
+              {workerState.uploadThumb === "running" ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Upload size={16} strokeWidth={1.5} />
+              )}
+              {workerState.uploadThumb === "running"
+                ? "Enviando..."
+                : "Selecionar JPG/PNG/WEBP"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                disabled={workerState.uploadThumb === "running"}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) uploadManualThumb(f);
+                  // Reset input pra permitir re-upload do mesmo arquivo
+                  e.target.value = "";
+                }}
+              />
+            </label>
+
+            <p className="text-[10px] text-text-3 mt-3 leading-relaxed">
+              Imagem usada como preview da oferta no swipe + cards do admin.
+              Pra ofertas sem VSL, é o único preview visual disponível.
+            </p>
+          </div>
+        </div>
+
+        {/* Worker actions row — Thumb only */}
+        <div className="mt-5 pt-4 border-t border-[var(--border-hairline)] flex flex-wrap items-center gap-2">
+          <span className="text-[10px] text-text-3 uppercase tracking-[0.14em] font-semibold mr-1">
+            Workers:
+          </span>
+
+          {/* Gerar thumb a partir do VSL — só se tem VSL */}
           {o.vsl_storage_path && (
             <button
               type="button"
@@ -1263,33 +1355,15 @@ export default function EditOfferPage() {
               ) : (
                 <ImageIcon size={11} strokeWidth={1.8} />
               )}
-              Gerar thumb do VSL
+              Gerar do VSL (frame médio)
             </button>
           )}
 
-          {/* Upload thumb manual */}
-          <label className="
-            inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
-            border border-[var(--border-default)] text-[11px] font-medium
-            text-text-2 hover:text-text hover:bg-[var(--bg-glass)]
-            transition-colors cursor-pointer
-          ">
-            {workerState.uploadThumb === "running" ? (
-              <Loader2 size={11} className="animate-spin" />
-            ) : (
-              <Upload size={11} strokeWidth={1.8} />
-            )}
-            Enviar thumb manual
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) uploadManualThumb(f);
-              }}
-            />
-          </label>
+          {!o.vsl_storage_path && (
+            <span className="text-[11px] text-text-3 italic">
+              Sem VSL pra gerar thumb automático — use upload manual ou screenshot da landing.
+            </span>
+          )}
         </div>
       </section>
 

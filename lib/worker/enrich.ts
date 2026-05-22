@@ -979,6 +979,20 @@ export async function savePageScreenshot(
   if (upErr) throw new Error(`screenshot upload: ${upErr.message}`);
   const screenshotUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/screenshots/${path}`;
 
+  // Pra type=ad_library, extrai meta_page_id da URL (view_all_page_id ou
+  // similar). Sem isso, sync_creatives não consegue chamar Meta API e
+  // skipa silenciosamente — bug detectado em 9 ofertas que tinham
+  // ad_library page mas meta_page_id=NULL.
+  let metaPageId: string | null = null;
+  if (type === "ad_library") {
+    try {
+      const { extractAdLibraryPageId } = await import("./bulk-ad-library-prep");
+      metaPageId = extractAdLibraryPageId(url);
+    } catch {
+      /* silent — extractor falhar não bloqueia o save da page */
+    }
+  }
+
   const { data: existing } = await supa
     .from("pages")
     .select("id")
@@ -988,14 +1002,15 @@ export async function savePageScreenshot(
 
   if (existing?.id) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supa.from("pages") as any)
-      .update({
-        type,
-        title,
-        screenshot_url: screenshotUrl,
-        fetched_at: new Date().toISOString(),
-      })
-      .eq("id", existing.id);
+    const updatePayload: Record<string, unknown> = {
+      type,
+      title,
+      screenshot_url: screenshotUrl,
+      fetched_at: new Date().toISOString(),
+    };
+    if (metaPageId) updatePayload.meta_page_id = metaPageId;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supa.from("pages") as any).update(updatePayload).eq("id", existing.id);
   } else {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supa.from("pages") as any).insert({
@@ -1006,6 +1021,11 @@ export async function savePageScreenshot(
       screenshot_url: screenshotUrl,
       fetched_at: new Date().toISOString(),
       visible: true,
+      meta_page_id: metaPageId,
+      // Pra ad_library com meta_page_id extraído, marca verified pra
+      // sync_creatives poder rodar. Sem meta_page_id, fica false pra
+      // admin verificar manualmente.
+      verified_for_sync: type === "ad_library" ? !!metaPageId : false,
     });
   }
 }

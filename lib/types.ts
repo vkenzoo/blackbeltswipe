@@ -12,7 +12,11 @@ export type Niche =
   | "ia_tech"
   | "mentalidade"
   | "beleza"
-  | "saude";
+  | "saude"
+  | "infantil_maternidade"
+  | "cristianismo"
+  | "relacionamento"
+  | "idiomas";
 
 export type Language = "pt-BR" | "en-US" | "es-ES";
 
@@ -161,6 +165,10 @@ export const NICHE_LABELS: Record<Niche, string> = {
   mentalidade: "Mentalidade",
   beleza: "Beleza",
   saude: "Saúde",
+  infantil_maternidade: "Infantil/Maternidade",
+  cristianismo: "Cristianismo",
+  relacionamento: "Relacionamento",
+  idiomas: "Idiomas",
 };
 
 export const NICHE_EMOJI: Record<Niche, string> = {
@@ -169,6 +177,10 @@ export const NICHE_EMOJI: Record<Niche, string> = {
   mentalidade: "🧘",
   beleza: "💅",
   saude: "💚",
+  infantil_maternidade: "👶",
+  cristianismo: "✝️",
+  relacionamento: "💕",
+  idiomas: "🗣️",
 };
 
 /**

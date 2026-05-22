@@ -14,6 +14,10 @@ const VALID_NICHES: Niche[] = [
   "mentalidade",
   "beleza",
   "saude",
+  "infantil_maternidade",
+  "cristianismo",
+  "relacionamento",
+  "idiomas",
 ];
 
 const NICHE_DESCRIPTIONS: Record<Niche, string> = {
@@ -30,12 +34,26 @@ const NICHE_DESCRIPTIONS: Record<Niche, string> = {
     "(não 'usar IA pra ganhar dinheiro' — isso é renda_extra).",
   mentalidade:
     "MENTALIDADE / MINDSET — desenvolvimento pessoal, produtividade, hábitos, " +
-    "disciplina, espiritualidade, propósito de vida, arquétipos, inteligência " +
-    "emocional. NÃO é sobre dinheiro (isso é renda_extra).",
+    "disciplina, propósito de vida, arquétipos, inteligência emocional. " +
+    "NÃO é sobre dinheiro (isso é renda_extra) nem religião específica (isso é cristianismo).",
   beleza: "Beleza, estética, maquiagem, cabelo, skincare, moda, self-care.",
   saude:
     "Saúde, emagrecimento, suplementos, fitness, medicina, cura, " +
-    "remédios naturais, bem-estar físico, dieta, terapia.",
+    "remédios naturais, bem-estar físico, dieta, terapia (física/clínica).",
+  infantil_maternidade:
+    "INFANTIL/MATERNIDADE — gravidez, parto, amamentação, sono do bebê, " +
+    "criação de filhos, educação infantil, alfabetização, atividades pedagógicas, " +
+    "produtos pra mães/crianças.",
+  cristianismo:
+    "CRISTIANISMO/FÉ — devocional, oração, estudo bíblico, fé cristã, " +
+    "espiritualidade cristã específica, cursos teológicos, livros de fé. " +
+    "Distinguir de 'mentalidade' que é genérica.",
+  relacionamento:
+    "RELACIONAMENTO — namoro, casamento, sedução, reconquista, dating, " +
+    "terapia de casal, comunicação afetiva. Pode incluir sexualidade.",
+  idiomas:
+    "IDIOMAS — aprender inglês, espanhol, alemão, qualquer língua estrangeira. " +
+    "Cursos de idioma, métodos de fluência, conversação, gramática.",
 };
 
 export async function classifyNiche(

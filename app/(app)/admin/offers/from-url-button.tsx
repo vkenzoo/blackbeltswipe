@@ -69,7 +69,8 @@ function pickStageIdx(elapsed: number, done: boolean): number {
 export function FromUrlButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [url, setUrl] = useState("");
+  // Lista de URLs — sempre pelo menos 1 input vazio na UI
+  const [urls, setUrls] = useState<string[]>([""]);
   const [hasVsl, setHasVsl] = useState(true);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<EnrichResult | null>(null);
@@ -85,19 +86,31 @@ export function FromUrlButton() {
     return () => clearInterval(id);
   }, [running, startedAt]);
 
+  // Helpers pra gerenciar a lista de URLs
+  function setUrlAt(i: number, value: string) {
+    setUrls((prev) => prev.map((u, idx) => (idx === i ? value : u)));
+  }
+  function addUrl() {
+    setUrls((prev) => (prev.length < 10 ? [...prev, ""] : prev));
+  }
+  function removeUrlAt(i: number) {
+    setUrls((prev) => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev));
+  }
+
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!url.trim() || running) return;
+    const cleanedUrls = urls.map((u) => u.trim()).filter((u) => u.length > 0);
+    if (cleanedUrls.length === 0 || running) return;
     setRunning(true);
     setResult(null);
     setStartedAt(Date.now());
     setElapsed(0);
     try {
-      // 1. Enqueue job — retorna imediatamente com job_id + offer_id
+      // 1. Enqueue jobs — retorna imediatamente com job_ids + offer_id
       const enqueueRes = await fetch("/api/admin/offers/from-url", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), has_vsl: hasVsl }),
+        body: JSON.stringify({ urls: cleanedUrls, has_vsl: hasVsl }),
       });
       const enqueueData = await enqueueRes.json();
       if (!enqueueRes.ok) {
@@ -176,7 +189,7 @@ export function FromUrlButton() {
 
   function reset() {
     setOpen(false);
-    setUrl("");
+    setUrls([""]);
     setHasVsl(true);
     setResult(null);
     setElapsed(0);
@@ -252,29 +265,78 @@ export function FromUrlButton() {
 
             {!result ? (
               <form onSubmit={submit} className="flex flex-col gap-4">
-                <div className="relative">
-                  <LinkIcon
-                    size={14}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 pointer-events-none"
-                  />
-                  <input
-                    type="url"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    disabled={running}
-                    required
-                    autoFocus
-                    placeholder="https://facebook.com/ads/library/... ou https://landing.com/"
-                    className="
-                      w-full pl-9 pr-4 py-3 rounded-[var(--r-md)]
-                      bg-black/40 border border-[var(--border-default)]
-                      text-[14px] text-text placeholder:text-text-3
-                      transition-[border-color,background] duration-200
-                      focus:outline-none focus:border-[#8B5CF6]
-                      focus:bg-black/60 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)]
-                      disabled:opacity-60
-                    "
-                  />
+                <div className="flex flex-col gap-2">
+                  {urls.map((u, i) => (
+                    <div key={i} className="relative flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <LinkIcon
+                          size={14}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 pointer-events-none"
+                        />
+                        <input
+                          type="url"
+                          value={u}
+                          onChange={(e) => setUrlAt(i, e.target.value)}
+                          disabled={running}
+                          required={i === 0}
+                          autoFocus={i === 0}
+                          placeholder={
+                            i === 0
+                              ? "https://facebook.com/ads/library/... ou https://landing.com/"
+                              : `URL ${i + 1} (opcional — outra page do mesmo advertiser)`
+                          }
+                          className="
+                            w-full pl-9 pr-4 py-3 rounded-[var(--r-md)]
+                            bg-black/40 border border-[var(--border-default)]
+                            text-[14px] text-text placeholder:text-text-3
+                            transition-[border-color,background] duration-200
+                            focus:outline-none focus:border-[#8B5CF6]
+                            focus:bg-black/60 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)]
+                            disabled:opacity-60
+                          "
+                        />
+                      </div>
+                      {urls.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeUrlAt(i)}
+                          disabled={running}
+                          title="Remover URL"
+                          className="
+                            shrink-0 grid place-items-center w-9 h-9 rounded-[var(--r-md)]
+                            border border-[var(--border-default)] text-text-3
+                            hover:text-[var(--error)] hover:border-[var(--error)]
+                            hover:bg-[color-mix(in_srgb,var(--error)_8%,transparent)]
+                            transition-colors disabled:opacity-50
+                          "
+                        >
+                          <X size={13} strokeWidth={2} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {urls.length < 10 && (
+                    <button
+                      type="button"
+                      onClick={addUrl}
+                      disabled={running}
+                      className="
+                        self-start inline-flex items-center gap-1.5 px-3 py-1.5
+                        rounded-full text-[11px] font-medium
+                        text-text-2 hover:text-text border border-dashed
+                        border-[var(--border-default)] hover:border-[#8B5CF6]
+                        transition-colors disabled:opacity-50
+                      "
+                    >
+                      <span style={{ color: "#8B5CF6" }}>+</span>
+                      Adicionar outra URL
+                    </button>
+                  )}
+                  <p className="text-[10px] text-text-3 leading-relaxed">
+                    Cola múltiplas URLs do MESMO advertiser (Ad Library + landings +
+                    variantes). Todas vão alimentar a mesma oferta — pages, criativos
+                    e ad_count agregam.
+                  </p>
                 </div>
 
                 {/* Toggle VSL — admin marca se essa oferta tem VSL ou se é
@@ -330,7 +392,7 @@ export function FromUrlButton() {
                   </button>
                   <button
                     type="submit"
-                    disabled={running || !url.trim()}
+                    disabled={running || urls.every((u) => !u.trim())}
                     className="
                       inline-flex items-center gap-2 px-5 py-2.5 rounded-full
                       text-white font-medium text-[13px]

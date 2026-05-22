@@ -88,9 +88,9 @@ export async function POST(request: Request) {
   );
 
   // 1. Cria stub IMEDIATO — admin vê row pulsante na lista
-  //    structure = "vsl" (default) ou "non_vsl" (admin sinalizou que oferta
-  //    não tem VSL). Edit page + sweeps usam esse campo pra decidir se
-  //    extract_vsl deve rodar ou não.
+  //    structure = "vsl" (default) ou "carta_vendas" (admin sinalizou que
+  //    oferta não tem VSL — geralmente sales letter de texto/imagens).
+  //    Admin pode editar depois pra "quiz", "infoproduto" etc se for o caso.
   const placeholderSlug = `enriching-${Date.now().toString(36)}`;
   const gradient = Math.floor(Math.random() * 20) + 1;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
       title: "Extraindo...",
       niche: "renda_extra",
       language: "pt-BR",
-      structure: hasVsl ? "vsl" : "non_vsl",
+      structure: hasVsl ? "vsl" : "carta_vendas",
       traffic_source: "facebook",
       status: "draft",
       ad_count: 0,

@@ -52,9 +52,10 @@ function deriveStage(data: LoadedData): Stage {
   const hasTranscript = !!offer.transcript_text && offer.transcript_text.length > 50;
   // "classificado" = niche não é o default inicial
   const hasNiche = offer.niche !== "renda_extra";
-  // Admin sinalizou que oferta NÃO tem VSL — pipeline pula extract_vsl
-  // + Whisper. Preview vira screenshot da landing em vez de thumb da VSL.
-  const isNonVsl = offer.structure === "non_vsl";
+  // Estruturas que inherentemente não têm VSL: carta_vendas (sales letter
+  // texto/imagens) e quiz (sequência de perguntas). Pipeline pula
+  // extract_vsl + Whisper e usa screenshot da landing como preview.
+  const isNonVsl = offer.structure === "carta_vendas" || offer.structure === "quiz";
 
   if (isNonVsl) {
     if (hasNiche) return { label: "Finalizando...", pct: 95 };

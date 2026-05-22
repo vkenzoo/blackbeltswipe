@@ -23,6 +23,7 @@ Estrutura disponível:
 - quiz: múltiplas páginas com perguntas antes de chegar no pitch
 - low_ticket: produto barato (<R$30) com foco em volume, pitch curto
 - infoproduto: curso/mentoria premium (>R$200) com pitch elaborado
+- carta_vendas: sales letter longa (texto + imagens, sem VSL no topo), estilo Russell Brunson/Frank Kern
 
 Traffic source principal:
 - facebook: copy agressivo, gatilhos emocionais, linguagem direta
@@ -51,7 +52,7 @@ TRANSCRIÇÃO DO VSL (primeiros {transcript_max_chars} chars):
 Preencha este JSON (responda apenas o JSON, nada mais):
 {
   "suggested_title": "Nome da oferta + o que ela ensina/entrega. Usa nome próprio se identificável na transcrição. NÃO é slogan. 4-12 palavras.",
-  "structure": "vsl|quiz|low_ticket|infoproduto",
+  "structure": "vsl|quiz|low_ticket|infoproduto|carta_vendas",
   "structure_confidence": 0.0-1.0,
   "structure_reason": "uma frase curta explicando por que essa structure",
   "traffic_source": "facebook|google|tiktok|multi",

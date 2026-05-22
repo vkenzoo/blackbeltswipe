@@ -16,7 +16,7 @@ export type Niche =
 
 export type Language = "pt-BR" | "en-US" | "es-ES";
 
-export type OfferStructure = "vsl" | "quiz" | "low_ticket" | "infoproduto";
+export type OfferStructure = "vsl" | "quiz" | "low_ticket" | "infoproduto" | "carta_vendas";
 
 export type TrafficSource = "facebook" | "google" | "tiktok" | "multi";
 
@@ -204,6 +204,7 @@ export const STRUCTURE_LABELS: Record<OfferStructure, string> = {
   quiz: "Quiz",
   low_ticket: "Low Ticket",
   infoproduto: "Infoproduto",
+  carta_vendas: "Carta de Vendas",
 };
 
 export const LANGUAGE_LABELS: Record<Language, { flag: string; label: string }> = {

@@ -22,6 +22,7 @@ const VALID_STRUCTURES: OfferStructure[] = [
   "quiz",
   "low_ticket",
   "infoproduto",
+  "carta_vendas",
 ];
 const VALID_TRAFFIC: TrafficSource[] = ["facebook", "google", "tiktok", "multi"];
 const VALID_PRICE_TIERS = ["low", "mid", "high", "unknown"] as const;

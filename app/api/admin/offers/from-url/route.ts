@@ -35,6 +35,10 @@ export async function POST(request: Request) {
   if (!body?.url || typeof body.url !== "string") {
     return NextResponse.json({ error: "missing_url" }, { status: 400 });
   }
+  // Flag opcional: admin pode sinalizar que a oferta não tem VSL (sales
+  // page texto, image-ad). Default = true (assume tem VSL). Quando false,
+  // pipeline pula extract_vsl/transcribe_vsl e usa screenshot da landing.
+  const hasVsl = body.has_vsl !== false;
 
   // Validação anti-SSRF: rejeita URLs de IPs internos, metadata cloud,
   // loopback, etc. Preveniria atacante com conta admin explorar infra.
@@ -84,6 +88,9 @@ export async function POST(request: Request) {
   );
 
   // 1. Cria stub IMEDIATO — admin vê row pulsante na lista
+  //    structure = "vsl" (default) ou "non_vsl" (admin sinalizou que oferta
+  //    não tem VSL). Edit page + sweeps usam esse campo pra decidir se
+  //    extract_vsl deve rodar ou não.
   const placeholderSlug = `enriching-${Date.now().toString(36)}`;
   const gradient = Math.floor(Math.random() * 20) + 1;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -93,7 +100,7 @@ export async function POST(request: Request) {
       title: "Extraindo...",
       niche: "renda_extra",
       language: "pt-BR",
-      structure: "vsl",
+      structure: hasVsl ? "vsl" : "non_vsl",
       traffic_source: "facebook",
       status: "draft",
       ad_count: 0,
@@ -146,12 +153,14 @@ export async function POST(request: Request) {
         offer_id: stub.id,
         source: "from_url_ad_library",
         countries, // array (multi-país) ou undefined (handler usa default)
+        has_vsl: hasVsl, // worker/sweeps sabem se devem rodar extract_vsl
         created_by: user.id,
       }
     : {
         url: body.url.trim(),
         created_by: user.id,
         job_offer_id: stub.id,
+        has_vsl: hasVsl,
       };
   const jobKind = adLibraryPageId ? "bulk_ad_library_prep" : "enrich_from_url";
 

@@ -70,6 +70,7 @@ export function FromUrlButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
+  const [hasVsl, setHasVsl] = useState(true);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<EnrichResult | null>(null);
   const [startedAt, setStartedAt] = useState<number | null>(null);
@@ -96,7 +97,7 @@ export function FromUrlButton() {
       const enqueueRes = await fetch("/api/admin/offers/from-url", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: url.trim(), has_vsl: hasVsl }),
       });
       const enqueueData = await enqueueRes.json();
       if (!enqueueRes.ok) {
@@ -176,6 +177,7 @@ export function FromUrlButton() {
   function reset() {
     setOpen(false);
     setUrl("");
+    setHasVsl(true);
     setResult(null);
     setElapsed(0);
     setStartedAt(null);
@@ -274,6 +276,44 @@ export function FromUrlButton() {
                     "
                   />
                 </div>
+
+                {/* Toggle VSL — admin marca se essa oferta tem VSL ou se é
+                    landing tipo image-ad / sales-page-texto. Quando NÃO tem
+                    VSL: pipeline pula extract_vsl + Whisper e usa screenshot
+                    da landing como preview. Economiza ~10min de worker. */}
+                <label
+                  className="
+                    flex items-center gap-3 px-3 py-2.5 rounded-[var(--r-md)]
+                    border border-[var(--border-default)]
+                    cursor-pointer hover:bg-black/30
+                    transition-[background,border-color] duration-150
+                  "
+                  style={{ background: "rgba(0,0,0,0.2)" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!hasVsl}
+                    onChange={(e) => setHasVsl(!e.target.checked)}
+                    disabled={running}
+                    className="
+                      w-4 h-4 rounded
+                      border border-[var(--border-default)]
+                      bg-black/40
+                      accent-[#8B5CF6]
+                      cursor-pointer
+                    "
+                  />
+                  <div className="flex-1">
+                    <div className="text-[13px] font-medium text-text">
+                      Esta oferta não tem VSL
+                    </div>
+                    <div className="text-[11px] text-text-3 mt-0.5 leading-relaxed">
+                      Marca se é uma sales page (texto/imagem) ou image-ad sem vídeo.
+                      Pipeline pula extract_vsl + Whisper e usa screenshot da
+                      landing como preview. Mais rápido (~30s vs ~5min).
+                    </div>
+                  </div>
+                </label>
 
                 {running && <WorkerStepper elapsed={elapsed} />}
 

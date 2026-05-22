@@ -20,6 +20,7 @@ type Offer = {
   id: string;
   title: string;
   niche: string;
+  structure: string | null;
   vsl_storage_path: string | null;
   transcript_text: string | null;
   ad_count: number;
@@ -44,12 +45,28 @@ function deriveStage(data: LoadedData): Stage {
   if (offer.title !== "Extraindo...") return { label: "Concluído", pct: 100 };
 
   const hasAdLibShot = pages.some((p) => p.type === "ad_library" && p.screenshot_url);
+  const hasLandingShot = pages.some((p) => p.type === "main_site" && p.screenshot_url);
   const landings = pages.filter((p) => p.type === "main_site").length;
   const hasCheckout = pages.some((p) => p.type === "checkout");
   const hasVsl = !!offer.vsl_storage_path;
   const hasTranscript = !!offer.transcript_text && offer.transcript_text.length > 50;
   // "classificado" = niche não é o default inicial
   const hasNiche = offer.niche !== "renda_extra";
+  // Admin sinalizou que oferta NÃO tem VSL — pipeline pula extract_vsl
+  // + Whisper. Preview vira screenshot da landing em vez de thumb da VSL.
+  const isNonVsl = offer.structure === "non_vsl";
+
+  if (isNonVsl) {
+    if (hasNiche) return { label: "Finalizando...", pct: 95 };
+    if (hasLandingShot && hasCheckout) return { label: "Classificando nicho", pct: 80 };
+    if (hasLandingShot) return { label: "Detectando checkout", pct: 65 };
+    if (landings > 0) return { label: "Screenshot da landing", pct: 50 };
+    if (creatives.length >= 3) return { label: "Descobrindo landings", pct: 35 };
+    if (creatives.length > 0) return { label: `Baixando criativos ${creatives.length}`, pct: 20 + creatives.length * 4 };
+    if (hasAdLibShot) return { label: "Screenshot Ad Library", pct: 15 };
+    if (offer.ad_count > 0) return { label: "Extraindo ad_count", pct: 10 };
+    return { label: "Abrindo página...", pct: 5 };
+  }
 
   if (hasTranscript) return { label: "Finalizando...", pct: 95 };
   if (hasVsl && hasNiche) return { label: "Transcrevendo Whisper", pct: 85 };

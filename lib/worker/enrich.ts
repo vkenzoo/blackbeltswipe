@@ -253,13 +253,22 @@ export async function enrichUrl(
     let vslSizeBytes: number | null = null;
     let vslThumbnailPath: string | null = null;
     let landingBodyText: string | null = null;
+    let htmlLang: string | null = null;
+
+    // Captura HTML lang attribute pra detecção de idioma (mais confiável
+    // que stopwords). Funciona pra qualquer pageType.
+    try {
+      htmlLang = await page.evaluate(
+        () => document.documentElement.getAttribute("lang")
+      );
+    } catch {}
 
     // ── Se URL é landing direta (não Ad Library), tenta achar VSL + checkout ──
     if (pageType === "main_site") {
       try {
         await revealHiddenContent(page);
 
-        // Extrai body text pra niche classification
+        // Extrai body text pra niche classification + idioma
         try {
           landingBodyText = await page.evaluate(() => (document.body?.innerText ?? "").slice(0, 1500));
         } catch {}
@@ -344,6 +353,41 @@ export async function enrichUrl(
       await (supa.from("offers") as any)
         .update({ ad_count: adCount })
         .eq("id", offerId);
+    }
+
+    // ── Detecta idioma da oferta + atualiza se mudou ──
+    //    Combina HTML lang attribute (mais confiável) com stopwords no
+    //    body text + title. Só atualiza se detecta com confiança e o
+    //    valor mudou do default pt-BR ou do que tá no DB.
+    try {
+      const { detectOfferLanguage } = await import("./detect-language");
+      const detection = detectOfferLanguage({
+        htmlLang,
+        bodyText: landingBodyText,
+        title: pageTitle,
+      });
+      if (detection.language) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: currentOffer } = await (supa as any)
+          .from("offers")
+          .select("language")
+          .eq("id", offerId)
+          .maybeSingle<{ language: string }>();
+        if (currentOffer && currentOffer.language !== detection.language) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (supa.from("offers") as any)
+            .update({ language: detection.language })
+            .eq("id", offerId);
+          console.log(
+            `[enrich] offer=${offerId.slice(0, 8)} idioma ${currentOffer.language} → ${detection.language} (${detection.source})`
+          );
+        }
+      }
+    } catch (err) {
+      console.warn(
+        `[enrich] detect lang fail:`,
+        err instanceof Error ? err.message : err
+      );
     }
 
     // ── Extrai mídia do DOM (fallback mais robusto que GraphQL) ──

@@ -186,11 +186,12 @@ export async function enrichUrl(
       if (declineBtn) await declineBtn.click({ timeout: 2000 }).catch(() => {});
     } catch {}
 
-    // Scroll suave pra carregar lazy content.
-    // Ad Library tem scroll infinito carregando ~20 ads por round — pra
-    // capturar até 30 criativos, precisa de 20-25 rounds. Outras URLs
-    // (landing, fb_page) bastam 5.
-    await autoScroll(page, pageType === "ad_library" ? 25 : 5);
+    // Scroll suave pra carregar lazy content. Ad Library: 8 rounds é
+    // suficiente pra carregar ~3 ads (nosso cap pra Ad Library blockada).
+    // Não tentamos pegar todos os ads do Ad Library — Meta API pública
+    // não expõe o catálogo completo pra pages comerciais e Playwright UI
+    // scraping é instável (cards lazy-loaded com thumbnails só).
+    await autoScroll(page, pageType === "ad_library" ? 8 : 5);
 
     // ── Title ──
     const pageTitle = await page.title().catch(() => null);
@@ -463,11 +464,10 @@ export async function enrichUrl(
     );
 
     // ── Create creatives (respeita cap global de 30 por oferta) ──
-    // Pra Ad Library URL: usa slots livres inteiros (até 30) — esse é o
-    // único caminho pra pegar todos ads quando Meta API pública retorna 0
-    // pro page_id (limitação pra pages comerciais não-verificadas).
-    // Pra landing direto: max 5 (landing tipicamente tem 1-3 vídeos, mais
-    // que isso é provavelmente ruído tipo banner ads).
+    // Pra Ad Library URL (Meta API pública não expõe ads de pages comerciais):
+    // cap em 3 — Playwright UI scraping é instável e captura só thumbnails
+    // visíveis. Aceita a limitação em vez de tentar puxar todos os 200+ ads.
+    // Pra landing direto: max 5 (landing tipicamente tem 1-3 vídeos).
     const { getCreativeCapStatus, MAX_CREATIVES_PER_OFFER } = await import(
       "./creative-cap"
     );
@@ -479,7 +479,10 @@ export async function enrichUrl(
     }
     let creativesCreated = 0;
     let slotsLeft = capStatus.remaining;
-    const perRunCap = pageType === "ad_library" ? slotsLeft : Math.min(5, slotsLeft);
+    const perRunCap =
+      pageType === "ad_library"
+        ? Math.min(3, slotsLeft) // Ad Library blockada: pega só 3 (Playwright instável)
+        : Math.min(5, slotsLeft); // landing: 5 (1-3 vídeos típico + buffer)
     const topCandidates = candidates.slice(0, perRunCap);
     console.log(
       `[enrich] offer=${offerId.slice(0, 8)} candidates=${candidates.length} perRunCap=${perRunCap} (pageType=${pageType}) cap_global=${MAX_CREATIVES_PER_OFFER} current=${capStatus.current}`

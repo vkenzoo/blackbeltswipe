@@ -82,7 +82,7 @@ export function CreativesExtractStatus({
       }
     }
     poll();
-    const id = setInterval(poll, 3000);
+    const id = setInterval(poll, 1500);
     return () => {
       cancelled = true;
       clearInterval(id);

@@ -173,11 +173,14 @@ export async function enrichUrl(
 
     // ── Navigate ──
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
-    // Espera network idle (até 10s) pra scripts carregarem
+    // Espera network idle (até 3s) pra scripts críticos carregarem.
+    // Antes era 10s mas Meta/FB ficam em long-polling pra sempre, então
+    // 10s era sempre desperdiçado. 3s é o suficiente pro HTML inicial +
+    // first render scripts.
     try {
-      await page.waitForLoadState("networkidle", { timeout: 10_000 });
+      await page.waitForLoadState("networkidle", { timeout: 3_000 });
     } catch {
-      // ignore — pode ficar em long-polling e nunca estabilizar
+      /* ignore — long-polling não estabiliza, segue mesmo */
     }
 
     // Dismiss cookie banner se existir (Meta mostra em EU/BR às vezes)
@@ -202,25 +205,28 @@ export async function enrichUrl(
       adCount = await extractAdCount(page).catch(() => null);
     }
 
-    // ── Screenshot full-page (com fallback pra viewport em páginas enormes
-    // tipo Ad Library com scroll infinito) ──
+    // ── Screenshot ──
+    // ad_library: usa viewport (topo da página) — fullPage seria 10-15s
+    // porque a página tem scroll infinito com centenas de ads.
+    // main_site/checkout: fullPage pra capturar a landing inteira.
     let screenshotBuffer: Buffer;
+    const useFullPage = pageType !== "ad_library";
     try {
       screenshotBuffer = await page.screenshot({
-        fullPage: true,
+        fullPage: useFullPage,
         type: "jpeg",
         quality: 80,
-        timeout: 15_000,
+        timeout: useFullPage ? 15_000 : 5_000,
       });
     } catch (err) {
       console.warn(
-        `[enrich] fullPage screenshot falhou (${err instanceof Error ? err.message : err}), usando viewport`
+        `[enrich] screenshot falhou (${err instanceof Error ? err.message : err}), tentando viewport`
       );
       screenshotBuffer = await page.screenshot({
         fullPage: false,
         type: "jpeg",
         quality: 80,
-        timeout: 10_000,
+        timeout: 5_000,
       });
     }
     const screenshotPath = `${offerId}/${Date.now()}.jpg`;
@@ -862,10 +868,12 @@ export async function autoScroll(page: Page, rounds = 3) {
     await page.evaluate(() =>
       window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" })
     );
-    await page.waitForTimeout(600);
+    // 300ms (era 600ms) — suficiente pra lazy load triggers, cortando
+    // metade do tempo total de scroll sem prejuízo perceptível.
+    await page.waitForTimeout(300);
   }
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }));
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(200);
 }
 
 /**
@@ -1397,11 +1405,54 @@ export async function downloadVideo(
     return { buffer, sizeBytes: buffer.byteLength, thumbBuffer };
   }
 
-  // HLS: ffmpeg download + re-encode agressivo pra caber no Supabase Pro.
-  // Ladder vai de qualidade decente (720p) até modo "só pra transcribe"
-  // (144p audio mono 24k). VSLs muito longas (90min+ desafios completos)
-  // exigem o último step. Preset ULTRAFAST pra não travar em VSLs longos.
+  // HLS: tenta REMUX primeiro (-c copy) — é instantâneo porque não
+  // re-encoda, só junta os .ts segments num mp4. Funciona em ~80% das
+  // VSLs (codec h264 + aac, padrão da maioria dos players brasileiros).
+  // Se falhar (codec incompatível) ou arquivo > 480MB → fallback pra
+  // ladder de re-encode.
   const MAX_BYTES = 480 * 1024 * 1024; // 480MB — usa quase todo o teto do bucket (500MB)
+
+  // FAST PATH: try remux without transcode (~10x faster pra VSLs longas)
+  try {
+    console.log(`[downloadVideo] FAST PATH: tentando remux (-c copy, sem transcode)...`);
+    const tFast = Date.now();
+    const fast = spawnSync(
+      "ffmpeg",
+      [
+        "-y",
+        "-referer", "https://www.facebook.com/",
+        "-user_agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "-i", url,
+        "-c", "copy",
+        "-bsf:a", "aac_adtstoasc", // fixa container compat
+        "-movflags", "+faststart",
+        outPath,
+      ],
+      { stdio: "pipe", timeout: 600_000 } // 10min — se HLS é grande, ainda termina rápido
+    );
+    if (fast.status === 0 && existsSync(outPath)) {
+      const sz = statSync(outPath).size;
+      const elapsed = Math.round((Date.now() - tFast) / 1000);
+      if (sz > 0 && sz <= MAX_BYTES) {
+        console.log(`[downloadVideo] ✅ remux OK em ${elapsed}s (${Math.round(sz/1024/1024)}MB)`);
+        const buf = readFileSync(outPath);
+        let thumbBuffer: Uint8Array | undefined;
+        try {
+          thumbBuffer = extractThumbFromLocal(outPath);
+        } catch {}
+        rmSync(outPath, { force: true });
+        return { buffer: buf, sizeBytes: sz, thumbBuffer };
+      }
+      console.log(`[downloadVideo] remux deu ${Math.round(sz/1024/1024)}MB > 480MB cap — caindo no ladder`);
+      rmSync(outPath, { force: true });
+    } else {
+      console.log(`[downloadVideo] remux falhou (status=${fast.status}) — caindo no ladder`);
+    }
+  } catch (err) {
+    console.warn(`[downloadVideo] remux exception, ladder de fallback:`, err instanceof Error ? err.message : err);
+  }
+
+  // FALLBACK LADDER: re-encode com CRF ladder se remux falhou ou arquivo grande
   const ladder = [
     { crf: 30, height: 720, audioBr: "64k" },
     { crf: 34, height: 540, audioBr: "48k" },

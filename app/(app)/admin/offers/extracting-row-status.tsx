@@ -103,7 +103,7 @@ export function ExtractingRowStatus({ offerId }: { offerId: string }) {
     poll(); // primeira call imediata
     const id = setInterval(() => {
       if (!done) poll();
-    }, 3000);
+    }, 1500);
     return () => {
       cancelled = true;
       clearInterval(id);

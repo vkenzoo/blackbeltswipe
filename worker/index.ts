@@ -65,20 +65,22 @@ const JOB_TIMEOUT_MS: Record<string, number> = {
 };
 
 // Concorrência por tipo (quantos desse tipo podem rodar em paralelo)
+// Tuned Apr/26 pra melhor throughput — Whisper API aguenta paralelo,
+// Meta API aguenta mais refresh paralelo, browser singleton aguenta 2 syncs.
 const CONCURRENCY: Record<string, number> = {
   screenshot_page: 5,          // 5 screenshots em paralelo (browser compartilhado)
   generate_thumb: 3,           // 3 thumbs (ffmpeg leve em frame único)
-  transcribe_vsl: 1,           // Whisper API tem rate limit
-  transcribe_creative: 2,      // criativos curtos — 2 em paralelo OK
+  transcribe_vsl: 1,           // Whisper API tem rate limit pra arquivos grandes
+  transcribe_creative: 4,      // ↑ de 2: criativos curtos, Whisper rate limit OK
   extract_vsl: 1,              // ffmpeg é CPU-bound pesado, 1 por vez
   enrich_offer: 1,
-  enrich_from_url: 2,          // 2 landings em paralelo — landing real é leve no Playwright
-  refresh_ad_count: 3,         // 3 ofertas em paralelo (evita rate limit FB)
+  enrich_from_url: 3,          // ↑ de 2: 3 landings em paralelo aproveita browser
+  refresh_ad_count: 5,         // ↑ de 3: Meta API aguenta mais paralelo
   compute_scale_score: 5,      // só DB reads, pode ser parallel
   ai_authoring: 2,             // 2 calls concurrent pro OpenAI
   bulk_ad_library_prep: 5,     // só Meta API leve, alta concorrência
   backfill_ad_count: 2,        // 2 em paralelo — pesado, cuidado com rate limit
-  sync_creatives: 1,           // 1 por vez — usa browser pesadamente em N ads
+  sync_creatives: 2,           // ↑ de 1: browser singleton + Playwright em snapshots
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

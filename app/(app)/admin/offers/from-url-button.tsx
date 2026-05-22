@@ -126,7 +126,7 @@ export function FromUrlButton() {
       //    Só transiciona pro success view (chama setResult) quando completou —
       //    enquanto roda, mantém o stepper visível. Captura erro permanente
       //    do job inicial pra falhar rápido.
-      const POLL_INTERVAL_MS = 3000;
+      const POLL_INTERVAL_MS = 1500;
       const MAX_POLL_MS = 8 * 60 * 1000; // 8min — VSLs longas + Whisper podem demorar
       const t0 = Date.now();
 

@@ -186,8 +186,11 @@ export async function enrichUrl(
       if (declineBtn) await declineBtn.click({ timeout: 2000 }).catch(() => {});
     } catch {}
 
-    // Scroll suave pra carregar lazy content
-    await autoScroll(page, 5);
+    // Scroll suave pra carregar lazy content.
+    // Ad Library tem scroll infinito carregando ~20 ads por round — pra
+    // capturar até 30 criativos, precisa de 20-25 rounds. Outras URLs
+    // (landing, fb_page) bastam 5.
+    await autoScroll(page, pageType === "ad_library" ? 25 : 5);
 
     // ── Title ──
     const pageTitle = await page.title().catch(() => null);
@@ -459,7 +462,12 @@ export async function enrichUrl(
       `[enrich] ${url}: graphql=${graphqlHits} ads=${graphqlAds.length} domV=${domVideos.length} domI=${domImages.length} interceptedV=${interceptedVideos.length} interceptedI=${interceptedImages.length} total=${candidates.length}`
     );
 
-    // ── Create creatives (max 5 por enrich, respeitando cap global de 30) ──
+    // ── Create creatives (respeita cap global de 30 por oferta) ──
+    // Pra Ad Library URL: usa slots livres inteiros (até 30) — esse é o
+    // único caminho pra pegar todos ads quando Meta API pública retorna 0
+    // pro page_id (limitação pra pages comerciais não-verificadas).
+    // Pra landing direto: max 5 (landing tipicamente tem 1-3 vídeos, mais
+    // que isso é provavelmente ruído tipo banner ads).
     const { getCreativeCapStatus, MAX_CREATIVES_PER_OFFER } = await import(
       "./creative-cap"
     );
@@ -471,7 +479,11 @@ export async function enrichUrl(
     }
     let creativesCreated = 0;
     let slotsLeft = capStatus.remaining;
-    const topCandidates = candidates.slice(0, Math.min(5, slotsLeft));
+    const perRunCap = pageType === "ad_library" ? slotsLeft : Math.min(5, slotsLeft);
+    const topCandidates = candidates.slice(0, perRunCap);
+    console.log(
+      `[enrich] offer=${offerId.slice(0, 8)} candidates=${candidates.length} perRunCap=${perRunCap} (pageType=${pageType}) cap_global=${MAX_CREATIVES_PER_OFFER} current=${capStatus.current}`
+    );
     for (let i = 0; i < topCandidates.length; i++) {
       if (slotsLeft <= 0) break;
       const c = topCandidates[i];

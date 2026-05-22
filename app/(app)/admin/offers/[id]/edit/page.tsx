@@ -153,6 +153,10 @@ export default function EditOfferPage() {
 
   // modal state pra adicionar criativo
   const [creativeModalOpen, setCreativeModalOpen] = useState(false);
+  const [extractUrlModalOpen, setExtractUrlModalOpen] = useState(false);
+  const [extractUrls, setExtractUrls] = useState<string[]>([""]);
+  const [extractRunning, setExtractRunning] = useState(false);
+  const [extractMsg, setExtractMsg] = useState<string | null>(null);
 
   // worker states pra ações isoladas
   const [workerState, setWorkerState] = useState<{
@@ -1903,19 +1907,35 @@ export default function EditOfferPage() {
                 visibilidade e ordem do que o usuário vê.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setCreativeModalOpen(true)}
-              disabled={saving}
-              className="
-                shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full
-                bg-[var(--accent)] text-black font-medium text-[12px]
-                hover:scale-[1.02] transition-transform duration-200 ease-[var(--ease-spring)]
-              "
-            >
-              <Plus size={12} strokeWidth={2.2} />
-              Adicionar criativo
-            </button>
+            <div className="shrink-0 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setExtractUrlModalOpen(true)}
+                disabled={saving}
+                className="
+                  inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full
+                  border border-[#8B5CF6] text-[#A78BFA] font-medium text-[12px]
+                  hover:bg-[color-mix(in_srgb,#8B5CF6_12%,transparent)]
+                  transition-colors duration-200
+                "
+              >
+                <Sparkles size={12} strokeWidth={2} />
+                Extrair de URL
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreativeModalOpen(true)}
+                disabled={saving}
+                className="
+                  inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full
+                  bg-[var(--accent)] text-black font-medium text-[12px]
+                  hover:scale-[1.02] transition-transform duration-200 ease-[var(--ease-spring)]
+                "
+              >
+                <Plus size={12} strokeWidth={2.2} />
+                Adicionar criativo
+              </button>
+            </div>
           </div>
 
           {creatives.length === 0 ? (
@@ -1953,6 +1973,228 @@ export default function EditOfferPage() {
             onClose={() => setCreativeModalOpen(false)}
             onCreated={handleCreativeCreated}
           />
+        )}
+
+        {/* Modal Extrair de URL — admin cola Ad Library URL ou landing,
+            worker descobre ads + baixa criativos na mesma oferta. Cap de 30
+            criativos respeitado nos handlers. */}
+        {extractUrlModalOpen && (
+          <div
+            className="fixed inset-0 z-50 grid place-items-center p-4"
+            style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)" }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !extractRunning) {
+                setExtractUrlModalOpen(false);
+                setExtractUrls([""]);
+                setExtractMsg(null);
+              }
+            }}
+          >
+            <div className="glass-strong rounded-[var(--r-xl)] p-6 w-full max-w-[560px] flex flex-col gap-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div
+                    className="text-[11px] font-semibold uppercase tracking-[0.14em] mb-0.5 flex items-center gap-1.5"
+                    style={{ color: "#8B5CF6" }}
+                  >
+                    <Sparkles size={11} strokeWidth={2.2} />
+                    Extrair criativos de URL
+                  </div>
+                  <h2 className="display text-[22px] font-semibold tracking-[-0.02em]">
+                    Adicionar via URL
+                  </h2>
+                  <p className="text-[12px] text-text-2 mt-1.5 leading-relaxed">
+                    Cola URL do Ad Library (page-based ou keyword) ou da
+                    landing do advertiser. Worker descobre ads e baixa
+                    criativos pra essa oferta (respeita cap de 30).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!extractRunning) {
+                      setExtractUrlModalOpen(false);
+                      setExtractUrls([""]);
+                      setExtractMsg(null);
+                    }
+                  }}
+                  className="p-1.5 text-text-3 hover:text-text"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const clean = extractUrls
+                    .map((u) => u.trim())
+                    .filter((u) => u.length > 0);
+                  if (clean.length === 0 || extractRunning) return;
+                  setExtractRunning(true);
+                  setExtractMsg("Validando + enfileirando...");
+                  try {
+                    const res = await fetch(
+                      `/api/admin/offers/${params.id}/extract-creatives-from-url`,
+                      {
+                        method: "POST",
+                        headers: { "content-type": "application/json" },
+                        body: JSON.stringify({ urls: clean }),
+                      }
+                    );
+                    const d = await res.json();
+                    if (!res.ok) {
+                      setExtractMsg(
+                        `Erro: ${d.message ?? d.error ?? res.statusText}`
+                      );
+                      return;
+                    }
+                    setExtractMsg(
+                      `✓ ${d.urls_count} extração${d.urls_count > 1 ? "ões" : ""} enfileirada. Aguarda ~2-3min por URL e recarrega a página.`
+                    );
+                    setTimeout(() => {
+                      setExtractUrlModalOpen(false);
+                      setExtractUrls([""]);
+                      setExtractMsg(null);
+                      router.refresh();
+                    }, 2500);
+                  } catch (err) {
+                    setExtractMsg(
+                      err instanceof Error ? err.message : "erro desconhecido"
+                    );
+                  } finally {
+                    setExtractRunning(false);
+                  }
+                }}
+                className="flex flex-col gap-3"
+              >
+                {extractUrls.map((u, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      type="url"
+                      value={u}
+                      onChange={(e) =>
+                        setExtractUrls((prev) =>
+                          prev.map((x, idx) => (idx === i ? e.target.value : x))
+                        )
+                      }
+                      disabled={extractRunning}
+                      required={i === 0}
+                      autoFocus={i === 0}
+                      placeholder={
+                        i === 0
+                          ? "https://facebook.com/ads/library/..."
+                          : `URL ${i + 1} (opcional)`
+                      }
+                      className="
+                        flex-1 px-4 py-3 rounded-[var(--r-md)]
+                        bg-black/40 border border-[var(--border-default)]
+                        text-[14px] text-text placeholder:text-text-3
+                        focus:outline-none focus:border-[#8B5CF6]
+                        focus:bg-black/60 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)]
+                        disabled:opacity-60
+                      "
+                    />
+                    {extractUrls.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExtractUrls((prev) =>
+                            prev.filter((_, idx) => idx !== i)
+                          )
+                        }
+                        disabled={extractRunning}
+                        className="
+                          shrink-0 grid place-items-center w-9 h-9 rounded-[var(--r-md)]
+                          border border-[var(--border-default)] text-text-3
+                          hover:text-[var(--error)] hover:border-[var(--error)]
+                          transition-colors disabled:opacity-50
+                        "
+                      >
+                        <X size={13} strokeWidth={2} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {extractUrls.length < 5 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExtractUrls((prev) => [...prev, ""])
+                    }
+                    disabled={extractRunning}
+                    className="
+                      self-start inline-flex items-center gap-1.5 px-3 py-1.5
+                      rounded-full text-[11px] font-medium
+                      text-text-2 hover:text-text border border-dashed
+                      border-[var(--border-default)] hover:border-[#8B5CF6]
+                      transition-colors disabled:opacity-50
+                    "
+                  >
+                    <span style={{ color: "#8B5CF6" }}>+</span>
+                    Adicionar outra URL
+                  </button>
+                )}
+
+                {extractMsg && (
+                  <div
+                    className={`
+                      text-[12px] rounded-[var(--r-md)] px-3 py-2 leading-relaxed
+                      ${
+                        extractMsg.startsWith("✓")
+                          ? "text-[var(--success)] bg-[color-mix(in_srgb,var(--success)_10%,transparent)]"
+                          : extractMsg.startsWith("Erro")
+                            ? "text-[var(--error)] bg-[color-mix(in_srgb,var(--error)_10%,transparent)]"
+                            : "text-text-2 bg-black/30"
+                      }
+                    `}
+                  >
+                    {extractMsg}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!extractRunning) {
+                        setExtractUrlModalOpen(false);
+                        setExtractUrls([""]);
+                        setExtractMsg(null);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-full text-[13px] text-text-2 hover:text-text"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={
+                      extractRunning ||
+                      extractUrls.every((u) => !u.trim())
+                    }
+                    className="
+                      inline-flex items-center gap-2 px-5 py-2.5 rounded-full
+                      text-white font-medium text-[13px]
+                      transition-[transform,opacity] duration-200 ease-[var(--ease-spring)]
+                      hover:scale-[1.02]
+                      disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100
+                    "
+                    style={{
+                      background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
+                    }}
+                  >
+                    {extractRunning ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Sparkles size={14} strokeWidth={2} />
+                    )}
+                    {extractRunning ? "Enfileirando..." : "Extrair"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
 
         {/* Transcrição */}

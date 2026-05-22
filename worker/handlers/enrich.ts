@@ -6,6 +6,7 @@ import { classifyNiche } from "@/lib/worker/classify";
 import { transcribeFromStorage } from "@/lib/worker/transcribe";
 import { discoverPagesForOffer } from "@/lib/worker/discover-pages-for-offer";
 import { syncCreativesFromApi } from "@/lib/worker/sync-creatives-from-api";
+import { countriesForOfferLanguage } from "@/lib/worker/offer-countries";
 import { getBrowser } from "../shared-browser";
 
 type Supa = SupabaseClient<Database>;
@@ -196,11 +197,20 @@ export async function handleEnrichFromUrl(supa: Supa, payload: any): Promise<voi
     }
   }
 
-  // 9. Sync criativos via API — baixa até 20 videos reais
+  // 9. Sync criativos via API — baixa criativos respeitando cap.
+  //    Países: usa lista expandida (~40) via countriesForOfferLanguage —
+  //    pages comerciais não-verificadas frequentemente targetam LATAM/UE
+  //    além do BR, e filtro estrito retorna 0 ads.
   try {
     const browser = await getBrowser();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: offerForLang } = await (supa as any)
+      .from("offers")
+      .select("language")
+      .eq("id", offerId)
+      .maybeSingle<{ language: string | null }>();
     const sync = await syncCreativesFromApi(supa, offerId as string, {
-      countries: ["BR"],
+      countries: countriesForOfferLanguage(offerForLang?.language),
       dispatchAlerts: false, // oferta nova, sem subscribers
       browser,
       offerSlug: uniqueSlug,
@@ -269,9 +279,9 @@ export async function handleEnrichOffer(supa: Supa, payload: any): Promise<void>
 
   const { data: offer } = await supa
     .from("offers")
-    .select("slug")
+    .select("slug, language")
     .eq("id", offer_id)
-    .maybeSingle<{ slug: string }>();
+    .maybeSingle<{ slug: string; language: string | null }>();
   if (!offer) throw new Error("offer_not_found");
 
   const result = await enrichUrl(supa, offer_id, offer.slug, url);
@@ -297,11 +307,12 @@ export async function handleEnrichOffer(supa: Supa, payload: any): Promise<void>
     }
   }
 
-  // Sync criativos via API — baixa até 20 videos + dispatch alerts
+  // Sync criativos via API — usa lista expandida de países (~40) pra
+  // capturar advertisers internacionais
   try {
     const browser = await getBrowser();
     const sync = await syncCreativesFromApi(supa, offer_id, {
-      countries: ["BR"],
+      countries: countriesForOfferLanguage(offer.language),
       dispatchAlerts: true,
       browser,
       offerSlug: offer.slug,

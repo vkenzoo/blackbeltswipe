@@ -37,7 +37,7 @@ export async function GET(
 
   const supa = createServiceClient();
 
-  // Kinds relevantes pra UI do edit (pipeline de VSL + AI + thumb)
+  // Kinds relevantes pra UI do edit (pipeline de VSL + AI + thumb + criativos)
   const KINDS = [
     "enrich_from_url",
     "enrich_offer",
@@ -47,6 +47,8 @@ export async function GET(
     "ai_authoring",
     "bulk_ad_library_prep",
     "refresh_ad_count",
+    "sync_creatives",
+    "transcribe_creative",
   ];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

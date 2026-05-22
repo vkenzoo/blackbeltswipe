@@ -52,6 +52,7 @@ import { AiDraftBanner } from "@/components/admin/ai-draft-banner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toaster";
 import { AdLibraryMonitorCard } from "@/components/admin/ad-library-monitor-card";
+import { CreativesExtractStatus } from "./creatives-extract-status";
 
 // ────────────────────────────────────────────────────────────
 // styles
@@ -1937,6 +1938,13 @@ export default function EditOfferPage() {
               </button>
             </div>
           </div>
+
+          {/* Indicator de extração ativa — só aparece se worker tá processando
+              bulk_ad_library_prep / enrich_from_url / sync_creatives / generate_thumb */}
+          <CreativesExtractStatus
+            offerId={params.id as string}
+            currentCount={creatives.length}
+          />
 
           {creatives.length === 0 ? (
             <div className="text-[13px] text-text-3 py-2 border-t border-[var(--border-hairline)] pt-4">

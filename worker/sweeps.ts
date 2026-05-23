@@ -28,19 +28,23 @@ import { getBrowser } from "./shared-browser";
  * Margem de segurança: sweep só mata job se passou 2× do timeout declarado
  * (dá tempo pro worker in-process terminar graceful antes de matar via DB).
  */
+// Tuned Apr/26 — enrich/sync_creatives são MUITO mais rápidos com nova
+// arquitetura (30-60s média), thresholds antigos (30min) deixavam zombies
+// bloqueando slots por horas. Sweep mata em 2× esses valores.
 const ZOMBIE_TIMEOUT_MS: Record<string, number> = {
-  screenshot_page: 90_000,
-  generate_thumb: 60_000,
-  transcribe_vsl: 900_000,
-  transcribe_creative: 300_000,
-  extract_vsl: 1_800_000,
-  enrich_offer: 1_800_000,
-  enrich_from_url: 1_800_000,
-  refresh_ad_count: 60_000,
-  compute_scale_score: 15_000,
-  ai_authoring: 30_000,
-  bulk_ad_library_prep: 30_000,
-  backfill_ad_count: 120_000,
+  screenshot_page: 60_000,        // 2× = 2min (era 90s/3min)
+  generate_thumb: 60_000,         // 2× = 2min
+  transcribe_vsl: 600_000,        // 2× = 20min (Whisper longo em VSL grande)
+  transcribe_creative: 180_000,   // 2× = 6min (era 300s/10min)
+  extract_vsl: 900_000,           // 2× = 30min (fast path 30s, fallback ladder ainda longo)
+  enrich_offer: 300_000,          // 2× = 10min (era 1800s/60min)
+  enrich_from_url: 300_000,       // 2× = 10min (média real ~30s, hardcap 5min)
+  refresh_ad_count: 60_000,       // 2× = 2min
+  compute_scale_score: 15_000,    // 2× = 30s
+  ai_authoring: 30_000,           // 2× = 1min
+  bulk_ad_library_prep: 30_000,   // 2× = 1min
+  backfill_ad_count: 120_000,     // 2× = 4min
+  sync_creatives: 300_000,        // 2× = 10min (Playwright em N snapshots)
 };
 
 /**

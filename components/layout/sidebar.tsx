@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 type User = {
   email: string;
   name: string | null;
+  avatar_url: string | null;
   role: "admin" | "member" | "affiliate";
 };
 
@@ -152,7 +153,12 @@ export function Sidebar({ user }: { user: User }) {
       </nav>
 
       {/* User menu */}
-      <UserMenu email={user.email} name={user.name} role={user.role} />
+      <UserMenu
+        email={user.email}
+        name={user.name}
+        avatarUrl={user.avatar_url}
+        role={user.role}
+      />
     </aside>
   );
 }

@@ -9,6 +9,7 @@ import { Logo } from "./logo";
 type User = {
   email: string;
   name: string | null;
+  avatar_url: string | null;
   role: "admin" | "member" | "affiliate";
 };
 

@@ -17,15 +17,21 @@ export default async function AppLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("email, name, role")
+    .select("email, name, avatar_url, role")
     .eq("id", user.id)
-    .single<{ email: string; name: string | null; role: "admin" | "member" | "affiliate" }>();
+    .single<{
+      email: string;
+      name: string | null;
+      avatar_url: string | null;
+      role: "admin" | "member" | "affiliate";
+    }>();
 
   return (
     <AppShell
       user={{
         email: profile?.email ?? user.email ?? "",
         name: profile?.name ?? null,
+        avatar_url: profile?.avatar_url ?? null,
         role: profile?.role ?? "member",
       }}
     >

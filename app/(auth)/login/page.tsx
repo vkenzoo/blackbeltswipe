@@ -89,7 +89,6 @@ function LoginCard() {
   const params = useSearchParams();
   const next = params.get("next") ?? "/app";
 
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
@@ -101,46 +100,23 @@ function LoginCard() {
     setErrorMsg("");
 
     const supabase = createClient();
-
-    if (mode === "signin") {
-      const res = await supabase.auth.signInWithPassword({ email, password });
-      if (res.error) {
-        setStatus("error");
-        const msg = res.error.message.toLowerCase();
-        if (msg.includes("invalid login credentials") || res.error.status === 400) {
-          setErrorMsg("Email ou senha inválidos.");
-        } else if (msg.includes("email not confirmed")) {
-          setErrorMsg("Email ainda não confirmado. Verifica a caixa de entrada.");
-        } else {
-          setErrorMsg(res.error.message);
-        }
-        return;
-      }
-      // Loga evento de sign_in (fire-and-forget, não bloqueia redirect)
-      logUserEvent("sign_in", { method: "password" });
-      router.push(next);
-      router.refresh();
-      return;
-    }
-
-    // signup mode
-    const res = await supabase.auth.signUp({ email, password });
+    const res = await supabase.auth.signInWithPassword({ email, password });
     if (res.error) {
       setStatus("error");
-      setErrorMsg(res.error.message);
+      const msg = res.error.message.toLowerCase();
+      if (msg.includes("invalid login credentials") || res.error.status === 400) {
+        setErrorMsg("Email ou senha inválidos.");
+      } else if (msg.includes("email not confirmed")) {
+        setErrorMsg("Email ainda não confirmado. Verifica a caixa de entrada.");
+      } else {
+        setErrorMsg(res.error.message);
+      }
       return;
     }
-    if (res.data.session) {
-      // Signup com sessão imediata (email confirmation desativada)
-      logUserEvent("sign_up", { method: "password" });
-      router.push(next);
-      router.refresh();
-      return;
-    }
-    setStatus("error");
-    setErrorMsg(
-      "Conta criada, mas sessão não gerada. Desativa 'Email Confirmations' no Supabase Auth Settings."
-    );
+    // Loga evento de sign_in (fire-and-forget, não bloqueia redirect)
+    logUserEvent("sign_in", { method: "password" });
+    router.push(next);
+    router.refresh();
   }
 
   return (
@@ -158,53 +134,11 @@ function LoginCard() {
             color: "#EAE8E2",
           }}
         >
-          {mode === "signin" ? (
-            <>
-              Veja tudo que tentaram<br />te esconder.
-            </>
-          ) : (
-            "Criar conta"
-          )}
+          Veja tudo que tentaram<br />te esconder.
         </h1>
         <p className="text-[13px] text-text-2 mt-1">
-          {mode === "signin"
-            ? "Entra com seu email e senha."
-            : "Preenche pra criar sua conta nova."}
+          Entra com seu email e senha.
         </p>
-      </div>
-
-      {/* Toggle signin/signup */}
-      <div
-        className="flex items-center gap-0.5 p-[3px] rounded-full border border-[var(--border-hairline)]"
-        style={{ background: "rgba(0,0,0,0.3)" }}
-      >
-        {([
-          { key: "signin", label: "Entrar" },
-          { key: "signup", label: "Criar conta" },
-        ] as const).map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => {
-              setMode(t.key);
-              setErrorMsg("");
-              setStatus("idle");
-            }}
-            disabled={status === "submitting"}
-            className={`
-              flex-1 py-2 px-3 text-[12px] font-medium rounded-full
-              transition-[background,color] duration-200
-              ${
-                mode === t.key
-                  ? "bg-[var(--bg-elevated)] text-text shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-                  : "text-text-3 hover:text-text-2"
-              }
-            `}
-            aria-pressed={mode === t.key}
-          >
-            {t.label}
-          </button>
-        ))}
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -281,13 +215,7 @@ function LoginCard() {
           {status === "submitting" && (
             <Loader2 size={15} strokeWidth={2} className="animate-spin" />
           )}
-          {status === "submitting"
-            ? mode === "signin"
-              ? "Entrando..."
-              : "Criando..."
-            : mode === "signin"
-            ? "Entrar"
-            : "Criar conta"}
+          {status === "submitting" ? "Entrando..." : "Entrar"}
         </button>
 
         {status === "error" && (
@@ -298,9 +226,7 @@ function LoginCard() {
       </form>
 
       <p className="text-[11px] text-text-3 text-center leading-relaxed">
-        {mode === "signin"
-          ? "Sem conta? Clica em \"Criar conta\" acima."
-          : "Primeiro usuário vira admin automaticamente."}
+        Acesso restrito. Fala com o admin se precisa de conta.
       </p>
     </div>
   );

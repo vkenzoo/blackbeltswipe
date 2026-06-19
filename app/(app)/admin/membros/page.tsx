@@ -28,6 +28,7 @@ import {
   type RecentActivity as ActivityRow,
 } from "@/lib/queries/users";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { AddMemberButton } from "./add-member-button";
 
 // ISR: revalida a cada 30s. Membros + atividade não precisam realtime estrito.
 export const revalidate = 30;
@@ -148,7 +149,7 @@ export default async function MembrosPage({
 
       {/* ── Members table ── */}
       <section className="glass rounded-[var(--r-lg)] overflow-hidden">
-        <div className="px-5 py-4 border-b border-[var(--border-hairline)] flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-[var(--border-hairline)] flex items-center justify-between gap-3 flex-wrap">
           <div>
             <h2 className="display text-[16px] font-semibold tracking-[-0.01em]">
               Membros
@@ -157,6 +158,7 @@ export default async function MembrosPage({
               {members.length} usuários cadastrados
             </p>
           </div>
+          <AddMemberButton />
         </div>
 
         {members.length === 0 ? (

@@ -158,17 +158,9 @@ export async function listMembers(): Promise<Member[]> {
     };
   });
 
-  // Ordena: admin primeiro, depois por last_sign_in_at desc, depois por created_at
-  members.sort((a, b) => {
-    if (a.role !== b.role) {
-      const order = { admin: 0, member: 1, affiliate: 2 };
-      return order[a.role] - order[b.role];
-    }
-    const al = a.last_sign_in_at ?? "0";
-    const bl = b.last_sign_in_at ?? "0";
-    if (al !== bl) return bl.localeCompare(al);
-    return b.created_at.localeCompare(a.created_at);
-  });
+  // Ordena por data de entrada (created_at) desc — mais recentes primeiro.
+  // Admin/último login viraram só metadata da row, sem afetar ordem.
+  members.sort((a, b) => b.created_at.localeCompare(a.created_at));
 
   return members;
 }
